@@ -18,23 +18,23 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement(name="group")
 public class GroupResponse {
-	@XmlAttribute
-	public String name;
-	
-	public Link link;
-	public String description;
-	public String type;
-	public boolean active;
-	public Attributes attributes;
-	
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("GroupResponse [name=").append(name).append(", link=")
-				.append(link).append(", description=").append(description)
-				.append(", type=").append(type).append(", active=")
-				.append(active).append(", attributes=").append(attributes)
-				.append("]");
-		return builder.toString();
-	}
+    @XmlAttribute
+    public String name;
+
+    public Link link;
+    public String description;
+    public String type;
+    public boolean active;
+    public Attributes attributes;
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("GroupResponse [name=").append(name).append(", link=")
+        .append(link).append(", description=").append(description)
+        .append(", type=").append(type).append(", active=")
+        .append(active).append(", attributes=").append(attributes)
+        .append("]");
+        return builder.toString();
+    }
 }

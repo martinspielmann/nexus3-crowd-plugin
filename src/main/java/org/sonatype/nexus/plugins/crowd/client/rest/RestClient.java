@@ -10,6 +10,8 @@
  */
 package org.sonatype.nexus.plugins.crowd.client.rest;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -17,407 +19,465 @@ import java.net.URLEncoder;
 import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MediaType;
+import javax.xml.bind.JAXB;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.helpers.DefaultValidationEventHandler;
+import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthenticationException;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.EntityBuilder;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.entity.ContentType;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.AuthenticatePost;
 import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.ConfigCookieGetResponse;
 import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.GroupResponse;
 import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.SearchUserGetResponse;
-import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.SessionPost;
-import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.SessionPostResponse;
 import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.UserResponse;
 import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.GroupsResponse;
-import org.sonatype.nexus.plugins.crowd.config.model.v1_0_0.Configuration;
-import org.sonatype.security.authorization.Role;
-import org.sonatype.security.usermanagement.DefaultUser;
-import org.sonatype.security.usermanagement.User;
-import org.sonatype.security.usermanagement.UserStatus;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.client.apache.ApacheHttpClient;
-import com.sun.jersey.client.apache.config.ApacheHttpClientConfig;
-import com.sun.jersey.client.apache.config.ApacheHttpClientState;
-import com.sun.jersey.client.apache.config.DefaultApacheHttpClientConfig;
+import org.sonatype.nexus.plugins.crowd.config.CrowdPluginConfiguration;
+import org.sonatype.nexus.security.role.Role;
+import org.sonatype.nexus.security.user.User;
+import org.sonatype.nexus.security.user.UserStatus;
 
 /**
  * @author Issa Gorissen
  */
 public class RestClient {
-	
-	private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
-	
-	private static final Pattern ERROR_XML = Pattern.compile(".*<reason>(.*)</reason>.*<message>(.*)</message>.*", Pattern.CASE_INSENSITIVE);
-	
-	private Client client;
-	private URI crowdServer;
-	
-	public RestClient(Configuration config) throws URISyntaxException {
-		DefaultApacheHttpClientConfig clientConfig = new DefaultApacheHttpClientConfig();
-		clientConfig.getProperties().put(ApacheHttpClientConfig.PROPERTY_HANDLE_COOKIES, Boolean.TRUE);
-		clientConfig.getProperties().put(ApacheHttpClientConfig.PROPERTY_PREEMPTIVE_AUTHENTICATION, Boolean.TRUE);
-		clientConfig.getProperties().put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, new Integer(config.getHttpTimeout()));
-		clientConfig.getProperties().put(ClientConfig.PROPERTY_READ_TIMEOUT, new Integer(config.getHttpTimeout()));
-		clientConfig.getProperties().put(ClientConfig.PROPERTY_THREADPOOL_SIZE, new Integer(config.getHttpMaxConnections()));
-		
-		crowdServer = new URI(config.getCrowdServerUrl()).resolve("rest/usermanagement/1/");
-		
-		ApacheHttpClientState httpState = new ApacheHttpClientState();
-		httpState.setCredentials(null, crowdServer.getHost(), crowdServer.getPort(), config.getApplicationName(), config.getApplicationPassword());
-		if (StringUtils.isNotBlank(config.getHttpProxyHost()) && config.getHttpProxyPort() > 0) {
-			clientConfig.getProperties().put(ApacheHttpClientConfig.PROPERTY_PROXY_URI, config.getHttpProxyHost() + ':' + config.getHttpProxyPort());
-			
-			if (config.getHttpProxyUsername() != null && config.getHttpProxyPassword() != null) {
-				httpState.setProxyCredentials(null, config.getHttpProxyHost(), config.getHttpProxyPort(), config.getHttpProxyUsername(), config.getHttpProxyPassword());
-			}
-		}
-		clientConfig.getProperties().put(ApacheHttpClientConfig.PROPERTY_HTTP_STATE, httpState);
-		
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("HTTP Client config");
-			LOG.debug(config.getCrowdServerUrl());
-			LOG.debug(crowdServer.toString());
-			LOG.debug("PROPERTY_THREADPOOL_SIZE:" + clientConfig.getProperty(ClientConfig.PROPERTY_THREADPOOL_SIZE));
-			LOG.debug("PROPERTY_READ_TIMEOUT:" + clientConfig.getProperty(ClientConfig.PROPERTY_READ_TIMEOUT));
-			LOG.debug("PROPERTY_CONNECT_TIMEOUT:" + clientConfig.getProperty(ClientConfig.PROPERTY_CONNECT_TIMEOUT));
-			LOG.debug("PROPERTY_PROXY_URI:" + clientConfig.getProperty(ApacheHttpClientConfig.PROPERTY_PROXY_URI));
-			LOG.debug("Crowd application name:" + config.getApplicationName());
-		}
-		
-		client = ApacheHttpClient.create(clientConfig);
-	}
-	
-	/**
-	 * Create new session token
-	 * 
-	 * @param username
-	 * @param password
-	 * @return session token
-	 * @throws RemoteException
-	 */
-	public String createSessionToken(String username, String password) throws RemoteException {
-		LOG.debug("session creation attempt for '{}'", username);
-		
-		WebResource r = client.resource(crowdServer.resolve("session"));
-		
-		SessionPost rBody = new SessionPost();
-		rBody.username = username;
-		rBody.password = password;
-		try {
-			SessionPostResponse response = r.accept(MediaType.APPLICATION_XML_TYPE).post(SessionPostResponse.class, rBody);
-			
-			if (LOG.isDebugEnabled()) LOG.debug(response.toString());
-			
-			LOG.info("session created for '{}'", username);
+    private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
 
-			return response.token;
-		} catch (UniformInterfaceException uie) {
-			throw handleError(uie);
-		}
-	}
-	
-	
-	/**
-	 * Retrieves the groups that the user is a nested member of
-	 * 
-	 * @param username
-	 * @return a set of roles (as strings)
-	 * @throws RemoteException
-	 * @throws UnsupportedEncodingException 
-	 */
-	public Set<String> getNestedGroups(String username) throws RemoteException, UnsupportedEncodingException {
-		LOG.debug("getNestedGroups({})", username);
-		
-		WebResource r = client.resource(crowdServer.resolve("user/group/nested?username=" + URLEncoder.encode(username, "UTF-8")));
-		
-		try {
-			GroupsResponse response = r.get(GroupsResponse.class);
-			if (LOG.isDebugEnabled()) LOG.debug(response.toString());
+    private HttpClient client;
+    private Credentials crowdCreds;
+    private URI crowdServer;
 
-			HashSet<String> result = new HashSet<String>();
-			if (response.group != null) {
-				for (GroupResponse group : response.group) {
-					result.add(group.name);
-				}
-			}
-			
-			return result;
-			
-		} catch (UniformInterfaceException uie) {
-			throw handleError(uie);
-		}
-	}
-	
-	
-	/**
-	 * Retrieves cookie configurations
-	 * 
-	 * @return a <code>ConfigCookieGetResponse</code>
-	 * @throws RemoteException
-	 */
-	public ConfigCookieGetResponse getCookieConfig() throws RemoteException {
-		LOG.debug("ConfigCookieGetResponse getCookieConfig()");
-		WebResource r = client.resource(crowdServer.resolve("config/cookie"));
-		
-		try {
-			return r.get(ConfigCookieGetResponse.class);
-		} catch (UniformInterfaceException uie) {
-			throw handleError(uie);
-		}
-	}
+    RestClient(CrowdPluginConfiguration config) throws URISyntaxException {
+        crowdServer = new URI(config.getCrowdServerUrl()).resolve("rest/usermanagement/1/");
 
-	
-	/**
-	 * Get the complete list of active user ids from Crowd
-	 * @return
-	 * @throws RemoteException
-	 */
-	// XXX: does not seem to be used by Nexus 2.1.2
-	public Set<String> getAllUsernames() throws RemoteException {
-		LOG.debug("getAllUsernames()");
-		
-		WebResource r = client.resource(crowdServer.resolve("search?entity-type=user&restriction=active%3Dtrue"));
-		
-		try {
-			SearchUserGetResponse response = r.get(SearchUserGetResponse.class);
-			if (LOG.isDebugEnabled()) LOG.debug(response.toString());
+        crowdCreds = new UsernamePasswordCredentials(config.getApplicationName(), config.getApplicationPassword());
 
-			HashSet<String> result = new HashSet<String>();
-			if (response.user != null) {
-				for (UserResponse user : response.user) {
-					result.add(user.name);			
-				}
-			}
-			
-			return result;
-			
-		} catch (UniformInterfaceException uie) {
-			throw handleError(uie);
-		}
-		
-	}
-	
-	
-	/**
-	 * @param userid
-	 * @return a <code>org.sonatype.security.usermanagement.User</code> from Crowd by a userid
-	 * @throws RemoteException
-	 * @throws UnsupportedEncodingException 
-	 */
-	public User getUser(String userid) throws RemoteException, UnsupportedEncodingException {
-		LOG.debug("getUser({})", userid);
-		
-		WebResource r = client.resource(crowdServer.resolve("user?username=" + URLEncoder.encode(userid, "UTF-8")));
-		
-		UserResponse response = null;
-		try {
-			response = r.get(UserResponse.class);
-			
-			if (LOG.isDebugEnabled()) LOG.debug(response.toString());
-			
-		} catch (UniformInterfaceException uie) {
-			throw handleError(uie);
-		}
-		
-		return convertUser(response);
-	}
-	
-	
-	
-	/**
-	 * Returns user list based on multiple criteria
-	 * @param userId
-	 * @param email
-	 * @param filterGroups
-	 * @param maxResults
-	 * @return
-	 * @throws RemoteException
-	 * @throws UnsupportedEncodingException
-	 */
-	// XXX: seems Nexus 2.1.2 only search by userId
-	// so we make the search in crowd on the userid OR email
-	// A Nexus user will be able to make a lookup based on the email
-	public Set<User> searchUsers(String userId, String email, Set<String> filterGroups, int maxResults) throws RemoteException, UnsupportedEncodingException {
-		LOG.debug("searchUsers({},{},{},{})", userId, email, filterGroups, maxResults);
-		
-		// find by user criteria 1st; then groups;
-		if (StringUtils.isNotEmpty(userId) || StringUtils.isNotEmpty(email)) {
-			StringBuilder restUri = new StringBuilder("search?entity-type=user&max-results=").append(maxResults).append("&restriction=");
-			
-			StringBuilder searchQuery = new StringBuilder("active = true");
-			if (StringUtils.isNotEmpty(userId)) {
-				searchQuery.append(" AND (name = \"").append(userId.trim()).append("\"")
-					.append(" OR email = \"" + userId.trim() + "\")");
-			}
-			if (StringUtils.isNotEmpty(email)) {
-				searchQuery.append(" AND email = \"").append(email.trim()).append("\"");
-			}
-			
-			// URL encoding
-			restUri.append(URLEncoder.encode(searchQuery.toString(), "UTF-8"));
-			
-			WebResource r = client.resource(crowdServer.resolve(restUri.toString()));
-			HashSet<User> result = new HashSet<User>();
-			try {
-				SearchUserGetResponse response = r.get(SearchUserGetResponse.class);
+        // configure the http client
+        RequestConfig.Builder reqConfigBuilder = RequestConfig.custom()
+                .setAuthenticationEnabled(true)
+                .setConnectTimeout(config.getHttpTimeout())
+                .setSocketTimeout(config.getHttpTimeout());
 
-				if (response.user != null) {
-					for (UserResponse user : response.user) {
-						result.add(getUser(user.name));			
-					}
-				}
-				
-			} catch (UniformInterfaceException uie) {
-				throw handleError(uie);
-			}
-			
-			// filter groups
-			if (filterGroups != null && !filterGroups.isEmpty()) {
-				for (User user : result) {
-					Set<String> userGroups = getNestedGroups(user.getUserId());
-					boolean remove = true;
-					for (String filterGoup : filterGroups) {
-						if (userGroups.contains(filterGoup)) {
-							remove = false;
-							break;
-						}
-					}
-					if (remove) {
-						result.remove(user);
-					}
-				}
-			}
-			
-			return result;
-		}
-		
-		// find by groups only
-		else {
-			if (filterGroups != null && !filterGroups.isEmpty()) {
-				Set<User> result = new HashSet<User>();
-				
-				for (String filterGroup : filterGroups) {
-					WebResource r = client.resource(crowdServer.resolve("group/user/nested?groupname=" + filterGroup));
-					
-					try {
-						SearchUserGetResponse response = r.get(SearchUserGetResponse.class);
-						if (response.user != null) {
-							for (UserResponse user : response.user) {
-								// filter out inactive users
-								if (user.active) {
-									result.add(getUser(user.name));
-								}
-							}
-						}
-					} catch (UniformInterfaceException uie) {
-						throw handleError(uie);
-					}
-					
-					
-					if (result.size() > maxResults) {
-						break;
-					}
-				}
-				
-				return result;
-			}
-		}
-		
-		return Collections.emptySet();
-	}
-	
-	
-	/**
-	 * @param groupName
-	 * @return a <code>org.sonatype.security.authorization.Role</code> by its name
-	 * @throws RemoteException
-	 * @throws UnsupportedEncodingException 
-	 */
-	// XXX: Nexus 2.1.2 does not seem to use this method
-	public Role getGroup(String groupName) throws RemoteException, UnsupportedEncodingException {
-		LOG.debug("getGroup({})", groupName);
-		
-		WebResource r = client.resource(crowdServer.resolve("group?groupname=" + URLEncoder.encode(groupName, "UTF-8")));
-		
-		GroupResponse response = null;
-		try {
-			response = r.get(GroupResponse.class);
-			if (LOG.isDebugEnabled()) LOG.debug(response.toString());
-		} catch (UniformInterfaceException uie) {
-			throw handleError(uie);
-		}
-		
-		return convertGroup(response);
-	}
-	
-	
-	
-	/**
-	 * 
-	 * @return all the crowd groups
-	 * @throws RemoteException
-	 */
-	public Set<Role> getAllGroups() throws RemoteException {
-		LOG.debug("getAllGroups()");
-		
-		WebResource r = client.resource(crowdServer.resolve("search?entity-type=group"));
-		
-		try {
-			GroupsResponse response = r.get(GroupsResponse.class);
-			if (LOG.isDebugEnabled()) LOG.debug(response.toString());
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        cm.setMaxTotal(config.getHttpMaxConnections());
+        cm.setDefaultMaxPerRoute(config.getHttpMaxConnections());
 
-			HashSet<Role> result = new HashSet<Role>();
-			if (response.group != null) {
-				for (GroupResponse group : response.group) {
-					result.add(new Role(group.name, group.name, "", "", true, null, null));			
-				}
-			}
-			
-			return result;		
-		} catch (UniformInterfaceException uie) {
-			throw handleError(uie);
-		}
-	}
-	
-	
-	private User convertUser(UserResponse in) {
-		User user = new DefaultUser();
-		user.setUserId(in.name);
-		user.setFirstName(in.firstName);
-		user.setLastName(in.lastName);
-		user.setEmailAddress(in.email);
-		user.setStatus(in.active ? UserStatus.active : UserStatus.disabled);
-		return user;
-	}
-	
-	private Role convertGroup(GroupResponse in) {
-        Role role = new Role();
-        role.setRoleId(in.name);
-        role.setName(in.name);
-        role.setDescription(in.description);
-        role.setReadOnly(true);
-		return role;
-	}
-	
-	private RemoteException handleError(UniformInterfaceException uie) {
-		ClientResponse response = uie.getResponse();
-		String errorXml = response.getEntity(String.class);
-		if (errorXml != null) {
-			Matcher matcher = ERROR_XML.matcher(errorXml);
-			if (matcher.matches()) {
-				return new RemoteException(matcher.group(1) + ": " + matcher.group(2));
-			}
-		}
-		
-		return new RemoteException("Error in a Crowd REST call", uie);
-	}
+        // proxy settings
+        CredentialsProvider credsProvider = new BasicCredentialsProvider();
+        if (StringUtils.isNotBlank(config.getHttpProxyHost()) && config.getHttpProxyPort() > 0) {
+            HttpHost proxy = new HttpHost(config.getHttpProxyHost(), config.getHttpProxyPort());
+            reqConfigBuilder.setProxy(proxy);
+
+            if (config.getHttpProxyUsername() != null && config.getHttpProxyPassword() != null) {
+                credsProvider.setCredentials(
+                        new AuthScope(proxy),
+                        new UsernamePasswordCredentials(config.getHttpProxyUsername(), config.getHttpProxyPassword()));
+            }
+        }
+
+        RequestConfig reqConfig = reqConfigBuilder.build();
+        HttpClientBuilder hcBuilder = HttpClients.custom()
+                .setMaxConnPerRoute(config.getHttpMaxConnections())
+                .setMaxConnTotal(config.getHttpMaxConnections())
+                .setConnectionManager(cm)
+                .setDefaultCredentialsProvider(credsProvider)
+                .setDefaultRequestConfig(reqConfig);
+
+        // handling of compressed responses
+        hcBuilder.addInterceptorLast(new CompressedHttpResponseInterceptor());
+
+
+        client = hcBuilder.build();
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("HTTP Client config");
+            LOG.debug(config.getCrowdServerUrl());
+            LOG.debug("PROPERTY_THREADPOOL_SIZE:" + cm.getMaxTotal());
+            LOG.debug("PROPERTY_READ_TIMEOUT:" + reqConfig.getSocketTimeout());
+            LOG.debug("PROPERTY_CONNECT_TIMEOUT:" + reqConfig.getConnectTimeout());
+            if (reqConfig.getProxy() != null) {
+                LOG.debug("PROPERTY_PROXY_URI:" + reqConfig.getProxy().toString());
+            }
+            LOG.debug("Crowd application name:" + config.getApplicationName());
+        }
+    }
+
+    /**
+     * Authenticates a user with crowd. If authentication failed, raises a <code>RemoteException</code>
+     * 
+     * @param username
+     * @param password
+     * @return session token
+     * @throws RemoteException
+     */
+    public void authenticate(String username, String password) throws RemoteException {
+        HttpClientContext hc = HttpClientContext.create();
+        HttpPost post = new HttpPost(crowdServer.resolve("authentication?username=" + urlEncode(username)));
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("authentication attempt for '{}'", username);
+            LOG.debug(post.getURI().toString());
+        }
+
+        AuthenticatePost creds = new AuthenticatePost();
+        creds.value = password;
+        try {
+            acceptXmlResponse(post);
+            StringWriter writer = new StringWriter();
+            JAXB.marshal(creds, writer);
+            post.setEntity(EntityBuilder.create()
+                    .setText(writer.toString())
+                    .setContentType(ContentType.APPLICATION_XML)
+                    .setContentEncoding("UTF-8")
+                    .build());
+
+            enablePreemptiveAuth(post, hc);
+            HttpResponse response = client.execute(post);
+            if (response.getStatusLine().getStatusCode() != 200) {
+                handleHTTPError(response);
+            }
+
+        } catch (IOException | AuthenticationException ioe) {
+            handleError(ioe);
+        } finally {
+            post.releaseConnection();
+        }
+    }
+
+
+    /**
+     * Retrieves the groups that the user is a nested member of
+     * 
+     * @param username
+     * @return a set of roles (as strings)
+     * @throws RemoteException
+     */
+    public Set<String> getNestedGroups(String username) throws RemoteException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("getNestedGroups({})", username);
+        }
+
+        HttpClientContext hc = HttpClientContext.create();
+        int maxResults = 100;
+        int startIndex = 0;
+        StringBuilder request = new StringBuilder("user/group/nested?username=").append(urlEncode(username))
+                .append("&max-results=").append(maxResults)
+                .append("&start-index=");
+
+        return getGroupsFromCrowdLoop(hc, request, startIndex, maxResults);
+    }
+
+
+    /**
+     * Retrieves cookie configurations
+     * 
+     * @return a <code>ConfigCookieGetResponse</code>
+     * @throws RemoteException
+     */
+    public ConfigCookieGetResponse getCookieConfig() throws RemoteException {
+        HttpClientContext hc = HttpClientContext.create();
+        HttpGet get = new HttpGet(crowdServer.resolve("config/cookie"));
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("ConfigCookieGetResponse getCookieConfig()");
+            LOG.debug(get.getURI().toString());
+        }
+
+        ConfigCookieGetResponse configCookie = null;
+        try {
+            enablePreemptiveAuth(acceptXmlResponse(get), hc);
+            HttpResponse response = client.execute(get);
+            if (response.getStatusLine().getStatusCode() != 200) {
+                handleHTTPError(response);
+            }
+            configCookie = unmarshal(response, ConfigCookieGetResponse.class);
+
+        } catch (IOException | JAXBException | AuthenticationException ioe) {
+            handleError(ioe);
+        } finally {
+            get.releaseConnection();
+        }
+
+        return Objects.requireNonNull(configCookie);
+    }
+
+
+    /**
+     * @param userid
+     * @return a <code>org.sonatype.security.usermanagement.User</code> from Crowd by a userid
+     * @throws RemoteException
+     */
+    public User getUser(String userid) throws RemoteException {
+        HttpClientContext hc = HttpClientContext.create();
+        HttpGet get = new HttpGet(crowdServer.resolve("user?username=" + urlEncode(userid)));
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("getUser({})", userid);
+            LOG.debug(get.getURI().toString());
+        }
+
+        UserResponse user = null;
+        try {
+            enablePreemptiveAuth(acceptXmlResponse(get), hc);
+            HttpResponse response = client.execute(get);
+            if (response.getStatusLine().getStatusCode() != 200) {
+                handleHTTPError(response);
+            }
+
+            user = unmarshal(response, UserResponse.class);
+
+        } catch (IOException | JAXBException | AuthenticationException ioe) {
+            handleError(ioe);
+        } finally {
+            get.releaseConnection();
+        }
+
+        return Objects.requireNonNull(convertUser(user));
+    }
+
+
+
+    /**
+     * Returns user list based on userid
+     * @param userId
+     * @param email
+     * @param filterGroups
+     * @return
+     * @throws RemoteException
+     * @throws UnsupportedEncodingException
+     */
+    public Set<User> searchUsers(String userId) throws RemoteException {
+        LOG.debug("searchUsers({})", userId);
+
+        HttpClientContext hc = HttpClientContext.create();
+        int maxResults = 1000;
+
+        if (StringUtils.isNotEmpty(userId)) {
+            StringBuilder request = new StringBuilder("search?entity-type=user&max-results=").append(maxResults).append("&restriction=");
+
+            StringBuilder searchQuery = new StringBuilder("active=true");
+            searchQuery.append(" AND name=\"").append(userId.trim()).append("*\"");
+
+            request.append(urlEncode(searchQuery.toString())).append("&start-index=");
+
+
+            int startIndex = 0;
+            Set<User> result = new HashSet<>();
+            try {
+                while (true) {
+                    HttpGet get = enablePreemptiveAuth(acceptXmlResponse(new HttpGet(crowdServer.resolve(request.toString() + startIndex))), hc);
+                    SearchUserGetResponse users = null;
+
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(get.getURI().toString());
+                    }
+
+                    try {
+                        HttpResponse response = client.execute(get);
+                        if (response.getStatusLine().getStatusCode() != 200) {
+                            handleHTTPError(response);
+                        }
+                        users = unmarshal(response, SearchUserGetResponse.class);
+                    } finally {
+                        get.releaseConnection();
+                    }
+
+                    if (users != null && users.user != null) {
+                        for (UserResponse user : users.user) {
+                            result.add(getUser(user.name));
+                        }
+
+                        if (users.user.size() != maxResults) {
+                            break;
+                        } else {
+                            startIndex += maxResults;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+            } catch (IOException | JAXBException | AuthenticationException ioe) {
+                handleError(ioe);
+            }
+
+
+            return result;
+        }
+
+        return Collections.emptySet();
+    }
+
+
+    /**
+     * 
+     * @return all the crowd groups
+     * @throws RemoteException
+     */
+    public Set<Role> getAllGroups() throws RemoteException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("getAllGroups()");
+        }
+
+        HttpClientContext hc = HttpClientContext.create();
+        int maxResults = 1000;
+        int startIndex = 0;
+        Set<Role> results = new HashSet<>();
+        StringBuilder request = new StringBuilder("search?entity-type=group&expand=group&restriction=active%3dtrue")
+        .append("&max-results=").append(maxResults)
+        .append("&start-index=");
+
+        Set<String> roleIds = getGroupsFromCrowdLoop(hc, request, startIndex, maxResults);
+        for (String roleId : roleIds) {
+            results.add(new Role(roleId, roleId, "", "", true, null, null));
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(String.format("returning %d groups as Nexus Role objects", results.size()));
+        }
+
+        return results;
+    }
+
+
+
+
+
+    private Set<String> getGroupsFromCrowdLoop(HttpClientContext hc, StringBuilder request, int startIndex, int maxResults) throws RemoteException {
+        Set<String> results = new HashSet<>();
+        try {
+            while (true) {
+                HttpGet get = enablePreemptiveAuth(acceptXmlResponse(new HttpGet(crowdServer.resolve(request.toString() + startIndex))), hc);
+                GroupsResponse groups = null;
+
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(get.getURI().toString());
+                }
+
+                try {
+                    HttpResponse response = client.execute(get);
+                    if (response.getStatusLine().getStatusCode() != 200) {
+                        handleHTTPError(response);
+                    }
+                    groups = unmarshal(response, GroupsResponse.class);
+                } finally {
+                    get.releaseConnection();
+                }
+
+                if (groups != null && groups.group != null) {
+                    for (GroupResponse group : groups.group) {
+                        results.add(group.name);
+                    }
+
+                    if (groups.group.size() != maxResults) {
+                        break;
+                    } else {
+                        startIndex += maxResults;
+                    }
+                } else {
+                    break;
+                }
+            }
+
+        } catch (IOException | JAXBException | AuthenticationException ioe) {
+            handleError(ioe);
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(String.format("returning %d groups", results.size()));
+        }
+
+        return results;
+    }
+
+    private String urlEncode(String str) {
+        try {
+            return URLEncoder.encode(str, "UTF-8");
+        } catch (UnsupportedEncodingException uee) {
+            LOG.error("UTF-8 not supported ?", uee);
+            return str;
+        }
+    }
+
+
+    private User convertUser(UserResponse in) {
+        User user = new User();
+        user.setUserId(in.name);
+        user.setFirstName(in.firstName);
+        user.setLastName(in.lastName);
+        user.setEmailAddress(in.email);
+        user.setStatus(in.active ? UserStatus.active : UserStatus.disabled);
+        return user;
+    }
+
+    private <T extends HttpRequestBase> T acceptXmlResponse(T method) {
+        method.addHeader("Accept", MediaType.APPLICATION_XML);
+        method.addHeader("Accept-Charset", "UTF-8");
+        return method;
+    }
+
+    private <T extends HttpRequestBase> T enablePreemptiveAuth(T method, HttpClientContext hcc) throws AuthenticationException {
+        HttpClientContext localContext = HttpClientContext.adapt(hcc);
+        method.addHeader(new BasicScheme().authenticate(crowdCreds, method, localContext));
+        return method;
+    }
+
+    private <T> T unmarshal(HttpResponse response, Class<T> type) throws JAXBException, IOException {
+        JAXBContext jaxbC = JAXBContext.newInstance(type);
+        Unmarshaller um = jaxbC.createUnmarshaller();
+        um.setEventHandler(new DefaultValidationEventHandler());
+        return um.unmarshal(new StreamSource(response.getEntity().getContent()), type).getValue();
+    }
+
+    private void handleHTTPError(HttpResponse response) throws RemoteException {
+        StatusLine statusLine = response.getStatusLine();
+        int status = statusLine.getStatusCode();
+        String statusText = statusLine.getReasonPhrase();
+        String body = null;
+        if (response.getEntity() != null) {
+            body = response.getEntity().toString();
+        }
+
+        StringBuilder strBuf = new StringBuilder();
+        strBuf.append("Crowd returned HTTP error code:").append(status);
+        strBuf.append(" - ").append(statusText);
+        if (StringUtils.isNotBlank(body)) {
+            strBuf.append("\n").append(body);
+        }
+
+        throw new RemoteException(strBuf.toString());
+    }
+
+    private void handleError(Exception e) throws RemoteException {
+        LOG.error("Error occured while consuming Crowd REST service", e);
+        throw new RemoteException(e.getMessage());
+    }
 }

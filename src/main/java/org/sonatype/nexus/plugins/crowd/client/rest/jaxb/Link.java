@@ -16,18 +16,18 @@ import javax.xml.bind.annotation.XmlAttribute;
  * @author Issa Gorissen
  */
 public class Link {
-	@XmlAttribute
-	public String rel;
-	
-	@XmlAttribute
-	public String href;
+    @XmlAttribute
+    public String rel;
 
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Link [rel=").append(rel).append(", href=").append(href)
-				.append("]");
-		return builder.toString();
-	}
-	
+    @XmlAttribute
+    public String href;
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Link [rel=").append(rel).append(", href=").append(href)
+        .append("]");
+        return builder.toString();
+    }
+
 }

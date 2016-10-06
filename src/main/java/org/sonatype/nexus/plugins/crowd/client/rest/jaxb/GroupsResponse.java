@@ -19,12 +19,12 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement(name="groups")
 public class GroupsResponse {
-	public List<GroupResponse> group;
+    public List<GroupResponse> group;
 
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("GroupsResponse [group=").append(group).append("]");
-		return builder.toString();
-	}
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("GroupsResponse [group=").append(group).append("]");
+        return builder.toString();
+    }
 }

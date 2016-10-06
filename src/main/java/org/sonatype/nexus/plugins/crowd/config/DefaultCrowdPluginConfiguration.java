@@ -12,81 +12,115 @@
  */
 package org.sonatype.nexus.plugins.crowd.config;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Properties;
 
-import javax.enterprise.inject.Typed;
-import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
-import org.sonatype.nexus.plugins.crowd.config.model.v1_0_0.Configuration;
-import org.sonatype.nexus.plugins.crowd.config.model.v1_0_0.io.xpp3.NexusCrowdPluginConfigurationXpp3Reader;
 
-@Singleton
 @Named
-@Typed(CrowdPluginConfiguration.class)
-public class DefaultCrowdPluginConfiguration implements
-		CrowdPluginConfiguration {
+@Singleton
+public class DefaultCrowdPluginConfiguration implements CrowdPluginConfiguration {
 
-	private final Logger logger = LoggerFactory
-			.getLogger(DefaultCrowdPluginConfiguration.class);
+    private final Logger LOG = LoggerFactory.getLogger(DefaultCrowdPluginConfiguration.class);
 
-	private File crowdConfigFile;
-	private Configuration configuration;
-	private ReentrantLock lock = new ReentrantLock();
+    private final String DEFAULT_HTTP_PROXY_PORT = "0";
+    private final String DEFAULT_HTTP_MAX_CONNECTIONS = "20";
+    private final String DEFAULT_HTTP_TIMEOUT = "5000"; // default is 5000 milliseconds
+    private final String DEFAULT_CACHE_TTL = "3600"; // default is 3600 seconds
 
-	@Inject
-	public DefaultCrowdPluginConfiguration(
-			final ApplicationConfiguration applicationConfiguration) {
-		checkNotNull(applicationConfiguration);
+    private Properties crowdConfigProperties;
 
-		crowdConfigFile = new File(
-				applicationConfiguration.getConfigurationDirectory(),
-				"crowd-plugin.xml");
-	}
+    public DefaultCrowdPluginConfiguration() throws FileNotFoundException, IOException {
+        String karafEtc = System.getProperty("karaf.etc");
+        if (StringUtils.isEmpty(karafEtc)) {
+            throw new RuntimeException("cannot load karaf.etc property value");
+        }
 
-	public Configuration getConfiguration() {
-		if (configuration != null) {
-			return configuration;
-		}
+        File crowdConfigFile = new File(karafEtc, "crowd-plugin.properties");
+        crowdConfigProperties = new Properties();
+        crowdConfigProperties.load(new FileInputStream(crowdConfigFile));
 
-		lock.lock();
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("content of crowd plugin config file");
+            crowdConfigProperties.forEach((k, v) -> LOG.trace(k + ": " + v)); 
+        }
+    }
 
-		FileInputStream is = null;
+    @Override
+    public String getApplicationName() {
+        String applicationName = crowdConfigProperties.getProperty("applicationName");
+        if (StringUtils.isEmpty(applicationName)) {
+            throw new RuntimeException("Crowd application name is missing for Crowd plugin");
+        }
+        return applicationName;
+    }
 
-		try {
-			is = new FileInputStream(crowdConfigFile);
+    @Override
+    public String getApplicationPassword() {
+        String applicationPassword = crowdConfigProperties.getProperty("applicationPassword");
+        if (StringUtils.isEmpty(applicationPassword)) {
+            throw new RuntimeException("Crowd application password is missing for Crowd plugin");
+        }
+        return applicationPassword;
+    }
 
-			NexusCrowdPluginConfigurationXpp3Reader reader = new NexusCrowdPluginConfigurationXpp3Reader();
+    @Override
+    public String getCrowdServerUrl() {
+        String crowdServerUrl = crowdConfigProperties.getProperty("crowdServerUrl");
+        if (StringUtils.isEmpty(crowdServerUrl)) {
+            throw new RuntimeException("Crowd server URL is missing for Crowd plugin");
+        }
+        if (!crowdServerUrl.endsWith("/")) {
+            crowdServerUrl += "/";
+        }
+        return crowdServerUrl;
+    }
 
-			configuration = reader.read(is);
-		} catch (FileNotFoundException e) {
-			logger.error("Crowd configuration file does not exist: {}",
-					crowdConfigFile.getAbsolutePath());
-		} catch (IOException e) {
-			logger.error("IOException while retrieving configuration file", e);
-		} catch (XmlPullParserException e) {
-			logger.error("Invalid XML Configuration", e);
-		} finally {
-			if (is != null) {
-				try {
-					is.close();
-				} catch (IOException e) {
-					// just closing if open
-				}
-			}
-			lock.unlock();
-		}
-		return configuration;
-	}
+    @Override
+    public int getCacheTTL() {
+        String value = crowdConfigProperties.getProperty("cacheTTL", DEFAULT_CACHE_TTL);
+        return Integer.parseInt(value);
+    }
+
+    @Override
+    public int getHttpMaxConnections() {
+        String value = crowdConfigProperties.getProperty("httpMaxConnections", DEFAULT_HTTP_MAX_CONNECTIONS);
+        return Integer.parseInt(value);
+    }
+
+    @Override
+    public String getHttpProxyHost() {
+        return crowdConfigProperties.getProperty("httpProxyHost");
+    }
+
+    @Override
+    public String getHttpProxyPassword() {
+        return crowdConfigProperties.getProperty("httpProxyPassword");
+    }
+
+    @Override
+    public int getHttpProxyPort() {
+        String value = crowdConfigProperties.getProperty("httpProxyPort", DEFAULT_HTTP_PROXY_PORT);
+        return Integer.parseInt(value);
+    }
+
+    @Override
+    public String getHttpProxyUsername() {
+        return crowdConfigProperties.getProperty("httpProxyUsername");
+    }
+
+    @Override
+    public int getHttpTimeout() {
+        String value = crowdConfigProperties.getProperty("httpTimeout", DEFAULT_HTTP_TIMEOUT);
+        return Integer.parseInt(value);
+    }
+
 }

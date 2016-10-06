@@ -14,12 +14,12 @@ package org.sonatype.nexus.plugins.crowd.client.rest.jaxb;
  * @author Issa Gorissen
  */
 class Attributes {
-	public Link link;
+    public Link link;
 
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Attributes [link=").append(link).append("]");
-		return builder.toString();
-	}
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Attributes [link=").append(link).append("]");
+        return builder.toString();
+    }
 }

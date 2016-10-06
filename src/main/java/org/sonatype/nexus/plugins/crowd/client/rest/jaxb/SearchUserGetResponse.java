@@ -19,12 +19,12 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement(name="users")
 public class SearchUserGetResponse {
-	public List<UserResponse> user;
+    public List<UserResponse> user;
 
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("SearchUserGetResponse [user=").append(user).append("]");
-		return builder.toString();
-	}
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("SearchUserGetResponse [user=").append(user).append("]");
+        return builder.toString();
+    }
 }

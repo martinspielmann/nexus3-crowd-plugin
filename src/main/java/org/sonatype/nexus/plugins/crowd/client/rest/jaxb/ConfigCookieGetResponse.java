@@ -17,18 +17,18 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement(name="cookie-config")
 public class ConfigCookieGetResponse {
-	public String domain;
-	public boolean secure;
-	public String name;
-	
-	
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("ConfigCookieGetResponse [domain=").append(domain)
-				.append(", secure=").append(secure).append(", name=")
-				.append(name).append("]");
-		return builder.toString();
-	}
-	
+    public String domain;
+    public boolean secure;
+    public String name;
+
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("ConfigCookieGetResponse [domain=").append(domain)
+        .append(", secure=").append(secure).append(", name=")
+        .append(name).append("]");
+        return builder.toString();
+    }
+
 }

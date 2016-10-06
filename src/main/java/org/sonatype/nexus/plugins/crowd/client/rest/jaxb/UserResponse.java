@@ -19,47 +19,47 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement(name="user")
 public class UserResponse {
-	@XmlAttribute
-	public String name;
-	
-	public Link link;
-	
-	@XmlElement(name="first-name")
-	public String firstName;
-	
-	@XmlElement(name="last-name")
-	public String lastName;
-	
-	@XmlElement(name="display-name")
-	public String displayName;
-	
-	public String email;
-	public Password password;
-	public boolean active;
-	public Attributes attributes;
-	
-	
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("UserResponse [name=").append(name).append(", link=")
-				.append(link).append(", firstName=").append(firstName)
-				.append(", lastName=").append(lastName)
-				.append(", displayName=").append(displayName)
-				.append(", email=").append(email).append(", password=")
-				.append(password).append(", active=").append(active)
-				.append(", attributes=").append(attributes).append("]");
-		return builder.toString();
-	}
+    @XmlAttribute
+    public String name;
+
+    public Link link;
+
+    @XmlElement(name="first-name")
+    public String firstName;
+
+    @XmlElement(name="last-name")
+    public String lastName;
+
+    @XmlElement(name="display-name")
+    public String displayName;
+
+    public String email;
+    public Password password;
+    public String key;
+    public boolean active;
+    public Attributes attributes;
+
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("UserResponse [name=").append(name).append(", link=").append(link)
+        .append(", firstName=").append(firstName).append(", lastName=").append(lastName)
+        .append(", displayName=").append(displayName).append(", email=").append(email)
+        .append(", password=").append(password).append(", key=").append(key)
+        .append(", active=").append(active).append(", attributes=").append(attributes)
+        .append("]");
+        return builder.toString();
+    }
 }
 
 class Password {
-	public Link link;
+    public Link link;
 
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Password [link=").append(link).append("]");
-		return builder.toString();
-	}
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Password [link=").append(link).append("]");
+        return builder.toString();
+    }
 }
