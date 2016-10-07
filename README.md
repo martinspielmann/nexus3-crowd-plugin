@@ -14,4 +14,4 @@ can be installed on Nexus 3.x OSS and offers some basic functionality for advanc
 
 To build the Nexus Plugin bundle, you can run : mvn clean package bundle:bundle
 
-Please read on at http://patrickroumanoff.github.io/nexus-crowd-plugin/
+Please read on at https://github.com/PatrickRoumanoff/nexus-crowd-plugin/wiki
