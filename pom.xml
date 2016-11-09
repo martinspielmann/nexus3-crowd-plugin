@@ -24,11 +24,6 @@
 	<name>${project.groupId}:${project.artifactId}</name>
 	<packaging>bundle</packaging>
 
-	<repositories>
-		<!-- <repository> <id>Sonatype</id> <url>https://repository.sonatype.org/content/groups/sonatype-public-grid/</url> 
-			</repository> -->
-	</repositories>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.sonatype.nexus</groupId>
