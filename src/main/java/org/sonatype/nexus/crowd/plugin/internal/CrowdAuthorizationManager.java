@@ -35,7 +35,7 @@ import org.sonatype.nexus.security.role.Role;
  */
 @Singleton
 @Typed(AuthorizationManager.class)
-@Named("CrowdAuthorizationManager")
+@Named("Crowd")
 public class CrowdAuthorizationManager extends AbstractReadOnlyAuthorizationManager {
 
 	private CachingNexusCrowdClient client;
