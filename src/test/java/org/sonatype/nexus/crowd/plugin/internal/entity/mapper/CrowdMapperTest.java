@@ -102,9 +102,8 @@ public class CrowdMapperTest {
 
 		assertNotNull(user);
 		assertEquals("greg", user.getUserId());
-		// TODO fix parsing firstname / lastname
-		//assertEquals("Greg", user.getFirstName());
-		//assertEquals("Dunn", user.getLastName());
+		assertEquals("Greg", user.getFirstName());
+		assertEquals("Dunn", user.getLastName());
 		assertEquals("greg@example.com", user.getEmailAddress());
 		assertEquals(UserStatus.active, user.getStatus());
 		assertEquals(CrowdUserManager.SOURCE, user.getSource());
