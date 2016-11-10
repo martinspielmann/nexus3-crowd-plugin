@@ -59,7 +59,7 @@ public class CrowdMapper {
 				LOGGER.error("Error while mapping result", e);
 			}
 		} else {
-			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine()));
+			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine().getStatusCode()));
 		}
 		return null;
 	}
@@ -74,7 +74,7 @@ public class CrowdMapper {
 				LOGGER.error("Error while mapping result", e);
 			}
 		} else {
-			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine()));
+			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine().getStatusCode()));
 		}
 		return Collections.emptySet();
 	}
@@ -91,7 +91,7 @@ public class CrowdMapper {
 				LOGGER.error("Error while mapping result", e);
 			}
 		} else {
-			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine()));
+			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine().getStatusCode()));
 		}
 		return null;
 	}
@@ -104,7 +104,7 @@ public class CrowdMapper {
 				LOGGER.error("Error while mapping result", e);
 			}
 		} else {
-			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine()));
+			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine().getStatusCode()));
 		}
 		return null;
 	}
@@ -118,7 +118,7 @@ public class CrowdMapper {
 				LOGGER.error("Error while mapping result", e);
 			}
 		} else {
-			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine()));
+			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine().getStatusCode()));
 		}
 		return Collections.emptySet();
 	}
@@ -132,7 +132,7 @@ public class CrowdMapper {
 				LOGGER.error("Error while mapping result", e);
 			}
 		} else {
-			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine()));
+			LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine().getStatusCode()));
 		}
 		return Collections.emptySet();
 	}
