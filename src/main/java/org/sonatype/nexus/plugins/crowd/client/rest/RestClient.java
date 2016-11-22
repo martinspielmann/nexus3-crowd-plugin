@@ -57,9 +57,9 @@ import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.AuthenticatePost;
 import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.ConfigCookieGetResponse;
 import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.GroupResponse;
+import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.GroupsResponse;
 import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.SearchUserGetResponse;
 import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.UserResponse;
-import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.GroupsResponse;
 import org.sonatype.nexus.plugins.crowd.config.CrowdPluginConfiguration;
 import org.sonatype.nexus.security.role.Role;
 import org.sonatype.nexus.security.user.User;
@@ -74,7 +74,8 @@ public class RestClient {
     private HttpClient client;
     private Credentials crowdCreds;
     private URI crowdServer;
-
+    private PoolingHttpClientConnectionManager cm;
+    
     RestClient(CrowdPluginConfiguration config) throws URISyntaxException {
         crowdServer = new URI(config.getCrowdServerUrl()).resolve("rest/usermanagement/1/");
 
@@ -86,7 +87,7 @@ public class RestClient {
                 .setConnectTimeout(config.getHttpTimeout())
                 .setSocketTimeout(config.getHttpTimeout());
 
-        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        cm = new PoolingHttpClientConnectionManager();
         cm.setMaxTotal(config.getHttpMaxConnections());
         cm.setDefaultMaxPerRoute(config.getHttpMaxConnections());
 
@@ -129,6 +130,16 @@ public class RestClient {
             LOG.debug("Crowd application name:" + config.getApplicationName());
         }
     }
+    
+    
+
+    @Override
+    protected void finalize() throws Throwable {
+        cm.close();
+        super.finalize();
+    }
+
+
 
     /**
      * Authenticates a user with crowd. If authentication failed, raises a <code>RemoteException</code>
@@ -317,9 +328,10 @@ public class RestClient {
 
                         if (users.user.size() != maxResults) {
                             break;
-                        } else {
-                            startIndex += maxResults;
                         }
+
+                        startIndex += maxResults;
+
                     } else {
                         break;
                     }
@@ -371,9 +383,10 @@ public class RestClient {
 
 
 
-    private Set<String> getGroupsFromCrowdLoop(HttpClientContext hc, StringBuilder request, int startIndex, int maxResults) throws RemoteException {
+    private Set<String> getGroupsFromCrowdLoop(HttpClientContext hc, StringBuilder request, int start, int maxResults) throws RemoteException {
         Set<String> results = new HashSet<>();
         try {
+            int startIndex = start;
             while (true) {
                 HttpGet get = enablePreemptiveAuth(acceptXmlResponse(new HttpGet(crowdServer.resolve(request.toString() + startIndex))), hc);
                 GroupsResponse groups = null;
@@ -399,9 +412,10 @@ public class RestClient {
 
                     if (groups.group.size() != maxResults) {
                         break;
-                    } else {
-                        startIndex += maxResults;
                     }
+                    
+                    startIndex += maxResults;
+
                 } else {
                     break;
                 }

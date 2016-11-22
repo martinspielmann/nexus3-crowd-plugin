@@ -13,9 +13,9 @@
 package org.sonatype.nexus.plugins.crowd.security;
 
 import java.rmi.RemoteException;
-import java.util.Set;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Named;

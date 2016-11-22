@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 import javax.inject.Named;
@@ -46,7 +47,9 @@ public class DefaultCrowdPluginConfiguration implements CrowdPluginConfiguration
 
         File crowdConfigFile = new File(karafEtc, "crowd-plugin.properties");
         crowdConfigProperties = new Properties();
-        crowdConfigProperties.load(new FileInputStream(crowdConfigFile));
+        try (InputStream in = new FileInputStream(crowdConfigFile)) {
+            crowdConfigProperties.load(in);
+        }
 
         if (LOG.isTraceEnabled()) {
             LOG.trace("content of crowd plugin config file");

@@ -109,13 +109,13 @@ public class CrowdUserManager extends AbstractReadOnlyUserManager {
 
 
 
-    private User completeUserRolesAndSource(User user) throws UserNotFoundException {
+    private User completeUserRolesAndSource(User user) {
         user.setSource(SOURCE);
         user.setRoles(getUsersRoles(user.getUserId()));
         return user;
     }
 
-    private Set<RoleIdentifier> getUsersRoles(String userId) throws UserNotFoundException {
+    private Set<RoleIdentifier> getUsersRoles(String userId) {
         Set<String> roleNames = null;
         try {
             roleNames = restClient.getNestedGroups(userId);
@@ -124,7 +124,7 @@ public class CrowdUserManager extends AbstractReadOnlyUserManager {
             return Collections.emptySet();
         }
         return Sets.newHashSet(Iterables.transform(roleNames, new Function<String, RoleIdentifier>() {
-
+            @Override
             public RoleIdentifier apply(String from) {
                 return new RoleIdentifier(SOURCE, from);
             }
