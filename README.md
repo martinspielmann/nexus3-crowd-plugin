@@ -44,7 +44,7 @@ Usage
   
 5. Configure the plugin
   After installing the Crowd realm should show up in the realm administration and you can activate it like shown below:
-  <img src='https://pseudorandombullshitgenerator.com/wp-content/uploads/2016/09/nexus_crowd.png'>
+  <img src='https://pseudorandombullshitgenerator.com/img/nexus_crowd.png'>
 
   A good starting point is mapping one crowd role to a nexus administrator role. Navigate to the role management, chose a crowd role a mapped role and map it to your desired nexus role.
-  <img src='https://pseudorandombullshitgenerator.com/wp-content/uploads/2016/09/nexus-5.png'>
+  <img src='https://pseudorandombullshitgenerator.com/img/nexus-5.png'>
