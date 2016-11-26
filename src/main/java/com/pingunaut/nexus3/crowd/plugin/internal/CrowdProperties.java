@@ -1,10 +1,10 @@
 /**
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
- *
+ * <p>
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
  * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the Apache License Version 2.0 is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -12,6 +12,7 @@
  */
 package com.pingunaut.nexus3.crowd.plugin.internal;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -27,31 +28,31 @@ import org.slf4j.LoggerFactory;
 @Named
 public class CrowdProperties {
 
-	private static final String CONFIG_FILE = "crowd.properties";
+    private static final String CONFIG_FILE = "crowd.properties";
 
-	private final Logger logger = LoggerFactory.getLogger(CrowdProperties.class);
+    private final Logger logger = LoggerFactory.getLogger(CrowdProperties.class);
 
-	private Properties configuration;
+    private Properties configuration;
 
-	public CrowdProperties() {
-		configuration = new Properties();
-		try {
-			configuration.load(Files.newInputStream(Paths.get("./etc/" + CONFIG_FILE)));
+    public CrowdProperties() {
+        configuration = new Properties();
+        try {
+            configuration.load(Files.newInputStream(Paths.get(".","etc", CONFIG_FILE)));
 
-		} catch (IOException e) {
-			logger.error("Error reading crowd properties", e);
-		}
-	}
+        } catch (IOException e) {
+            logger.error("Error reading crowd properties", e);
+        }
+    }
 
-	public String getServerUrl() {
-		return configuration.getProperty("crowd.server.url");
-	}
+    public String getServerUrl() {
+        return configuration.getProperty("crowd.server.url");
+    }
 
-	public String getApplicationName() {
-		return configuration.getProperty("application.name");
-	}
+    public String getApplicationName() {
+        return configuration.getProperty("application.name");
+    }
 
-	public String getApplicationPassword() {
-		return configuration.getProperty("application.password");
-	}
+    public String getApplicationPassword() {
+        return configuration.getProperty("application.password");
+    }
 }
