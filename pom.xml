@@ -21,6 +21,8 @@
 
 	<groupId>com.pingunaut.nexus</groupId>
 	<artifactId>nexus3-crowd-plugin</artifactId>
+    <version>3.1.0-04-SNAPSHOT</version>
+
 	<name>${project.groupId}:${project.artifactId}</name>
 	<packaging>bundle</packaging>
 
@@ -72,7 +74,6 @@
 				<configuration>
 					<instructions>
 						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-						<Import-Package>*,!com.google.code.gson</Import-Package>
 						<Embed-Dependency>
 							gson;scope=compile,
 							httpclient;scope=compile
