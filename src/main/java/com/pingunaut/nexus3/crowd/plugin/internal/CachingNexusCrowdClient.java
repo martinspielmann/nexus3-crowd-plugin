@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,7 +60,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 							props.getServerUrl());
 		host = new HttpHost(serverUri.getHost(), serverUri.getPort(), serverUri.getScheme());
 
-		// TODO get various timeouts from environment / system properties / custome properties
+		// TODO get various timeouts from environment / system properties / custom properties
 		RequestConfig defaultRequestConfig = RequestConfig.custom()
 				.setConnectTimeout(15000)
 				.setSocketTimeout(15000)
@@ -170,10 +171,10 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 			query.append(" AND name=\"").append(criteria.getUserId()).append("*\"");
 		}
 		if (!Strings.isNullOrEmpty(criteria.getEmail())) {
-			query.append(" AND email=\"").append(criteria.getEmail()).append("\"");
+			query.append(" AND email=\"").append(criteria.getEmail()).append("*\"");
 		}
 		try {
-			return URLEncoder.encode(query.toString(), "UTF-8");
+			return URLEncoder.encode(query.toString(), StandardCharsets.UTF_8.toString());
 		} catch (UnsupportedEncodingException e) {
 			LOGGER.error("ouch... your platform does not support utf-8?", e);
 			return "";
