@@ -74,6 +74,7 @@
 				<configuration>
 					<instructions>
 						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+						<Import-Package>*,!com.google.code.gson</Import-Package>
 						<Embed-Dependency>
 							gson;scope=compile,
 							httpclient;scope=compile
