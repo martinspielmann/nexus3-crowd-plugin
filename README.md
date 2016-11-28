@@ -36,7 +36,7 @@ Build and install the into your local maven repository using the following comma
   ```
 
 ####2. Add bundle to startup properties
-Append the following line to startup.properties file found in *[**$install-dir**/etc/]*
+Append the following line to *startup.properties* file found in *[**$install-dir**/etc/]*
 ```
 mvn\:com.pingunaut.nexus/nexus3-crowd-plugin/3.1.0-04 = 200
 ```
