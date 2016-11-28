@@ -34,28 +34,23 @@ Build and install the into your local maven repository using the following comma
   cd nexus3-crowd-plugin
   mvn install
   ```
-####2. Edit karaf properties
-In *[**$install-dir**/etc/karaf]* there is a file called *org.apache.karaf.features.cfg*.
-#####2.1. Add nexus3-crowd-plugin to the featuresRepositories
-The file contains a property called *featuresRepositories* which does already contain a 
-comma separated list of feature repositories. Append the nexus3-crowd-plugin feature to the list
-by pointing to the feature file in you local maven repository (the file it was created in step 1).
-```
-,file:${user.home}/.m2/repository/com/pingunaut/nexus/nexus3-crowd-plugin/3.1.0-04/nexus3-crowd-plugin-3.1.0-04-features.xml
-```
-
-#####2.2. Add nexus3-crowd-plugin to the boot features
-Wthin the same *org.apache.karaf.features.cfg* file there is another property called *featuresBoot* which 
-contains a comma separated list of features which should be started during application startup.
-Append com.google.common.base (which this plugin depends on) and nexus3-crowd-plugin to it:
- ```
-, com.google.common.base, nexus3-crowd-plugin
-```
 After editing, your *org.apache.karaf.features.cfg* file
 should look something like this:
 <img style="border: 1px solid grey;" src="https://pseudorandombullshitgenerator.com/img/karaf-features-properties.png" />
-  
-####3. Create crowd.properties
+
+####2. Add bundle to startup properties
+Append the following line to startup.properties file found in *[**$install-dir**/etc/]*
+```
+mvn\:com.pingunaut.nexus/nexus3-crowd-plugin/3.1.0-04 = 200
+```
+
+####3. Let *org.ops4j.pax.url.mvn.repositories* point to your local repository
+In *[**$install-dir**/etc/]* there is a file called *org.ops4j.pax.url.mvn.cfg*. It contains a property called *org.ops4j.pax.url.mvn.repositories*. It has to be set to your local maven repository (same as added on step 2):
+```
+org.ops4j.pax.url.mvn.repositories=file:${user.home}/.m2/repository@id=system.repository@snapshots
+```
+
+####4. Create crowd.properties
 Create a crowd.properties file in *[**$install-dir**/etc/]*<br/>
 The file has to contain the following properties:
   ```
