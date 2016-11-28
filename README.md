@@ -34,9 +34,6 @@ Build and install the into your local maven repository using the following comma
   cd nexus3-crowd-plugin
   mvn install
   ```
-After editing, your *org.apache.karaf.features.cfg* file
-should look something like this:
-<img style="border: 1px solid grey;" src="https://pseudorandombullshitgenerator.com/img/karaf-features-properties.png" />
 
 ####2. Add bundle to startup properties
 Append the following line to startup.properties file found in *[**$install-dir**/etc/]*
