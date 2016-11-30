@@ -36,7 +36,7 @@ Build and install the into your local maven repository using the following comma
   ```
 
 ####2. Add bundle to startup properties
-Append the following line to *startup.properties* file found in *[**$install-dir**/etc/]*
+Append the following line to *startup.properties* file found in *[**$install-dir**/etc/karaf/]*
 ```
 mvn\:com.pingunaut.nexus/nexus3-crowd-plugin/3.1.0-04 = 200
 ```
@@ -46,6 +46,11 @@ In *[**$install-dir**/etc/]* there is a file called *org.ops4j.pax.url.mvn.cfg*.
 ```
 org.ops4j.pax.url.mvn.repositories=file:${user.home}/.m2/repository@id=system.repository@snapshots
 ```
+
+OR
+
+####3. Copy all needed jars from ${user.home}/.m2/repository to *[**$install-dir**/system/]*.
+
 
 ####4. Create crowd.properties
 Create a crowd.properties file in *[**$install-dir**/etc/]*<br/>
