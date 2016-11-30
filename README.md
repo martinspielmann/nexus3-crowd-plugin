@@ -35,9 +35,9 @@ cd nexus3-crowd-plugin
 mvn install
 ```
   
-####2. Copy plugin into nexus system folder
+####2. Copy all needed jars into nexus system folder
 ```
-cp -ra ~/.m2/repository/com/pingunaut *[**$install-dir**/system/com/]*
+cp -ra ~/.m2/repository/com/pingunaut *[**$install-dir**/system/com]*
 ```
 
 ####3. Add bundle to startup properties
@@ -47,7 +47,7 @@ mvn\:com.pingunaut.nexus/nexus3-crowd-plugin/3.1.0-04 = 200
 ```
 
 ####4. Create crowd.properties
-Create a crowd.properties file in *[**$install-dir**/etc/]*<br/>
+Create a *crowd.properties* file in *[**$install-dir**/etc]*<br/>
 The file has to contain the following properties:
 ```
 crowd.server.url (e.g. http://localhost:8095/crowd)
