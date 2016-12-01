@@ -13,19 +13,19 @@ public class CacheProviderTest {
 
 	@Test
 	public void testPutToken() {
-		p.putToken("foo", "bar");
-		Assert.assertEquals("bar", p.getToken("foo").get());
+		p.putToken("foo", new byte[]{1,2,3});
+		Assert.assertArrayEquals(new byte[]{1,2,3}, p.getToken("foo").get());
 	}
 
 	@Test
 	public void testGetToken() {
-		p.putToken("foo", "bar");
-		Assert.assertEquals("bar", p.getToken("foo").get());
+		p.putToken("foo", new byte[]{1,2,3});
+		Assert.assertArrayEquals(new byte[]{1,2,3}, p.getToken("foo").get());
 	}
 
 	@Test
 	public void testGetTokenEmpty() {
-		p.putToken("foo", "bar");
+		p.putToken("foo", new byte[]{1,2,3});
 		Assert.assertEquals(Optional.empty(), p.getToken("foo2"));
 	}
 
