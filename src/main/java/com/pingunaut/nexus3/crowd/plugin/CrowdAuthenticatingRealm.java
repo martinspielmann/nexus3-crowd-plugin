@@ -40,7 +40,7 @@ import com.pingunaut.nexus3.crowd.plugin.internal.CachingNexusCrowdClient;
 public class CrowdAuthenticatingRealm extends AuthorizingRealm {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrowdAuthenticatingRealm.class);
-	public static String NAME = CrowdAuthenticatingRealm.class.getName();
+	public static final String NAME = CrowdAuthenticatingRealm.class.getName();
 	private CachingNexusCrowdClient client;
 
 	/**

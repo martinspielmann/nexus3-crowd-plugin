@@ -34,26 +34,35 @@ git clone https://github.com/pingunaut/nexus3-crowd-plugin.git
 cd nexus3-crowd-plugin
 mvn install
 ```
-  
+
 ####2. Copy all needed jars into nexus system folder
 ```
 cp -ra ~/.m2/repository/com/pingunaut *[**$install-dir**/system/com]*
 ```
 
 ####3. Add bundle to startup properties
-Append the following line to *startup.properties* file found in *[**$install-dir**/etc/karaf]*
+Append the following line to *startup.properties* file found in *[**$install-dir**/etc/karaf]*<br />
+Please replace [PLUGIN_VERSION] by the current plugin version.
 ```
-mvn\:com.pingunaut.nexus/nexus3-crowd-plugin/3.1.0-04 = 200
+mvn\:com.pingunaut.nexus/nexus3-crowd-plugin/[PLUGIN_VERSION] = 200
 ```
 
 ####4. Create crowd.properties
 Create a *crowd.properties* file in *[**$install-dir**/etc]*<br/>
 The file has to contain the following properties:
 ```
-crowd.server.url (e.g. http://localhost:8095/crowd)
-application.name
-application.password
+crowd.server.url=http://localhost:8095/crowd (replace by your nexus url)
+application.name=nexus (replace by your nexus application name configured in crowd)
+application.password=nexus (replace by your nexus application password configured in crowd)
+cache.authentication=false (should authentication be cached? default is false)
 ```
+
+**Remark:** Caching can improve authentication performance significantly 
+by moving credential validation into memory instead of requesting it from 
+the crowd server every time.
+However if cache.authentication is set to true, 
+a hashed version of user credentials will be cached. 
+This might be a security risk and is also the reason why this property defaults to false.
   
 ##Usage
 ####1. Activate Plugin

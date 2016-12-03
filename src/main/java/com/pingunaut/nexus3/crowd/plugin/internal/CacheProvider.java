@@ -6,6 +6,7 @@ import java.util.Set;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import com.pingunaut.nexus3.crowd.plugin.internal.entity.CachedToken;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
@@ -24,7 +25,7 @@ public class CacheProvider {
 	private static final int MAX_CACHED_ELEMENTS = 32000;
 
 
-	public void putToken(String username, byte[] crowdToken) {
+	public void putToken(String username, CachedToken crowdToken) {
 		tokenCache().put(new Element(username, crowdToken));
 	}
 
@@ -48,10 +49,10 @@ public class CacheProvider {
 
 	}
 
-	public Optional<byte[]> getToken(String username) {
+	public Optional<CachedToken> getToken(String username) {
 		Element element = tokenCache().get(username);
 		if(element!=null){
-			return Optional.ofNullable((byte[]) element.getObjectValue());
+			return Optional.ofNullable((CachedToken) element.getObjectValue());
 		}
 		return Optional.empty();
 	}
