@@ -24,7 +24,7 @@ public class CacheProvider {
 	private static final int MAX_CACHED_ELEMENTS = 32000;
 
 
-	public void putToken(String username, String crowdToken) {
+	public void putToken(String username, byte[] crowdToken) {
 		tokenCache().put(new Element(username, crowdToken));
 	}
 
@@ -48,10 +48,10 @@ public class CacheProvider {
 
 	}
 
-	public Optional<String> getToken(String username) {
+	public Optional<byte[]> getToken(String username) {
 		Element element = tokenCache().get(username);
 		if(element!=null){
-			return Optional.ofNullable((String) element.getObjectValue());
+			return Optional.ofNullable((byte[]) element.getObjectValue());
 		}
 		return Optional.empty();
 	}
