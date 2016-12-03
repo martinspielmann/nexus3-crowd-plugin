@@ -12,7 +12,6 @@
  */
 package com.pingunaut.nexus3.crowd.plugin.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -30,7 +29,7 @@ public class CrowdProperties {
 
     private static final String CONFIG_FILE = "crowd.properties";
 
-    private final Logger logger = LoggerFactory.getLogger(CrowdProperties.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CrowdProperties.class);
 
     private Properties configuration;
 
@@ -38,9 +37,8 @@ public class CrowdProperties {
         configuration = new Properties();
         try {
             configuration.load(Files.newInputStream(Paths.get(".","etc", CONFIG_FILE)));
-
         } catch (IOException e) {
-            logger.error("Error reading crowd properties", e);
+            LOGGER.error("Error reading crowd properties", e);
         }
     }
 
@@ -54,5 +52,10 @@ public class CrowdProperties {
 
     public String getApplicationPassword() {
         return configuration.getProperty("application.password");
+    }
+
+    public boolean isCacheAuthenticationEnabled() {
+        String enabled = configuration.getProperty("cache.authentication");
+        return Boolean.valueOf(enabled);
     }
 }

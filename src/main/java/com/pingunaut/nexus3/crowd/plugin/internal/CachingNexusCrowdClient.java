@@ -5,9 +5,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,6 +12,7 @@ import java.util.stream.Collectors;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import com.pingunaut.nexus3.crowd.plugin.internal.entity.CachedToken;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -31,6 +29,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.pingunaut.nexus3.crowd.plugin.NexusCrowdClient;
@@ -51,28 +50,29 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 	private final CloseableHttpClient client;
 	private final CacheProvider cache;
 	private final URI serverUri;
-	private HttpHost host;
+	private final HttpHost host;
+	private final boolean authCacheEnabled;
 
 	@Inject
 	public CachingNexusCrowdClient(CrowdProperties props, CacheProvider cache) {
 		this.cache = cache;
+		this.authCacheEnabled = props.isCacheAuthenticationEnabled();
+        LOGGER.info("Authentication Cache enabled: " + authCacheEnabled);
+
 		// check if crowd url ends with a "/" and if so, cut it. fixes #9
-		serverUri = URI.create(
-				props.getServerUrl().endsWith("/")?
-						props.getServerUrl().substring(0, props.getServerUrl().length()-1):
-							props.getServerUrl());
+		String uri = props.getServerUrl().endsWith("/") ? props.getServerUrl().substring(0, props.getServerUrl().length() - 1) : props.getServerUrl();
+		serverUri = URI.create(uri);
+
 		host = new HttpHost(serverUri.getHost(), serverUri.getPort(), serverUri.getScheme());
 
-		// TODO get various timeouts from environment / system properties / custom properties
 		RequestConfig defaultRequestConfig = RequestConfig.custom()
 				.setConnectTimeout(15000)
 				.setSocketTimeout(15000)
 				.setConnectionRequestTimeout(15000)
 				.build();
-
+		UsernamePasswordCredentials usernamePasswordCredentials = new UsernamePasswordCredentials(props.getApplicationName(), props.getApplicationPassword());
 		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-		credentialsProvider.setCredentials(new AuthScope(serverUri.getHost(), serverUri.getPort()),
-				new UsernamePasswordCredentials(props.getApplicationName(), props.getApplicationPassword()));
+		credentialsProvider.setCredentials(new AuthScope(serverUri.getHost(), serverUri.getPort()), usernamePasswordCredentials);
 		client = HttpClientBuilder.create().setDefaultRequestConfig(defaultRequestConfig).setDefaultCredentialsProvider(credentialsProvider).build();
 	}
 
@@ -82,8 +82,8 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 			return getClient().execute(host, request, responseHandler);
 		} catch (IOException e) {
 			LOGGER.error("error executng query", e);
+			return null;
 		}
-		return null;
 	}
 
 	private HttpGet httpGet(String query) {
@@ -107,44 +107,38 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 	@Override
 	public boolean authenticate(UsernamePasswordToken token) {
 		// check if token is cached
-		Optional<byte[]> cachedToken = cache.getToken(token.getUsername());
-        byte[] passwordHash = calculateSha256(token.getPassword());
-
-        if (cachedToken.isPresent()) {
-		    // check password
-			if(passwordHash != null && Arrays.equals(passwordHash, cachedToken.get())){
-				return true;
+		if(authCacheEnabled) {
+			Optional<CachedToken> cachedToken = cache.getToken(token.getUsername());
+			if (cachedToken.isPresent()) {
+				// check password
+                boolean isPasswordValid = PasswordHasher.isPasswordCorrect(token.getPassword(), cachedToken.get().salt, cachedToken.get().hash);
+				if (isPasswordValid) {
+                    LOGGER.info("Authenticated using cached credentials");
+					return true;
+				}
 			}
 		}
 
-		// reach out ot crowd and check auth
-		String auth = executeQuery(
-				httpPost(restUri("session"),
-						new StringEntity(
-								CrowdMapper.toUsernamePasswordJsonString(token.getUsername(), token.getPassword()),
-								ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
+		// if authentication with cached value fails or is skipped, crowd and check auth
+        String authRequest = CrowdMapper.toUsernamePasswordJsonString(token.getUsername(), token.getPassword());
+        String authResponse = executeQuery(httpPost(restUri("session"), new StringEntity(authRequest, ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
 
-		if (Strings.isNullOrEmpty(auth)) {
-            // authentication failed
-			return false;
-		} else {
+		if (StringUtils.hasText(authResponse)) {
             // authentication was successful
-            // TODO: should authentications be cached? much faster that reaching out to crowd every time but also dangerous
-			cache.putToken(token.getUsername(), passwordHash);
-			return true;
+            if(authCacheEnabled){
+                cache.putToken(token.getUsername(), createCachedToken(token.getPassword()));
+            }
+            return true;
 		}
 
+        // authentication failed
+        return false;
 	}
 
-	private static byte[] calculateSha256(char[] input)  {
-		try {
-			MessageDigest digest = MessageDigest.getInstance("SHA-256");
-			digest.update(new String(input).getBytes(StandardCharsets.UTF_8));
-			return digest.digest();
-		}catch (NoSuchAlgorithmException e){
-			LOGGER.error("Error getting algorithm to hash passwords", e);
-			return null;
-		}
+	private static CachedToken createCachedToken(char[] input)  {
+		byte[] salt = PasswordHasher.getNextSalt();
+        byte[] hash = PasswordHasher.hash(input, salt);
+        return new CachedToken(hash, salt);
 	}
 
 	protected CloseableHttpClient getClient() {
@@ -202,7 +196,6 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 		} catch (UnsupportedEncodingException e) {
 			LOGGER.error("ouch... your platform does not support utf-8?", e);
 			return "";
-
 		}
 	}
 
@@ -210,8 +203,6 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 	public Set<Role> findRoles() {
 		return executeQuery(httpGet(restUri("search?entity-type=group&expand=group")), CrowdMapper::toRoles);
 	}
-
-
 
 	private String restUri(String path) {
 		return String.format("%s/rest/usermanagement/1/%s", serverUri.toString(), path);
