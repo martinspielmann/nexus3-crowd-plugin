@@ -5,6 +5,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -104,10 +107,17 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 	@Override
 	public boolean authenticate(UsernamePasswordToken token) {
 		// check if token is cached
-		Optional<String> cachedToken = cache.getToken(token.getUsername());
-		if (cachedToken.isPresent()) {
-			return true;
+		Optional<byte[]> cachedToken = cache.getToken(token.getUsername());
+        byte[] passwordHash = calculateSha256(token.getPassword());
+
+        if (cachedToken.isPresent()) {
+		    // check password
+			if(passwordHash != null && Arrays.equals(passwordHash, cachedToken.get())){
+				return true;
+			}
 		}
+
+		// reach out ot crowd and check auth
 		String auth = executeQuery(
 				httpPost(restUri("session"),
 						new StringEntity(
@@ -115,12 +125,26 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 								ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
 
 		if (Strings.isNullOrEmpty(auth)) {
+            // authentication failed
 			return false;
 		} else {
-			cache.putToken(token.getUsername(), auth);
+            // authentication was successful
+            // TODO: should authentications be cached? much faster that reaching out to crowd every time but also dangerous
+			cache.putToken(token.getUsername(), passwordHash);
 			return true;
 		}
 
+	}
+
+	private static byte[] calculateSha256(char[] input)  {
+		try {
+			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			digest.update(new String(input).getBytes(StandardCharsets.UTF_8));
+			return digest.digest();
+		}catch (NoSuchAlgorithmException e){
+			LOGGER.error("Error getting algorithm to hash passwords", e);
+			return null;
+		}
 	}
 
 	protected CloseableHttpClient getClient() {
