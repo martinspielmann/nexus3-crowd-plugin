@@ -1,7 +1,7 @@
 #Nexus3 Crowd Plugin
 This plugin adds a Crowd realm to Sonatype Nexus OSS and enables you to authenticate with Crowd Users and authorize with crowd roles.
 
-It works with Nexus 3.1.x and Crowd 2.x
+It works with Nexus 3.2.x and Crowd 2.x
 
 This is a fork of http://patrickroumanoff.github.io/nexus-crowd-plugin/
 
@@ -10,15 +10,15 @@ This is a fork of http://patrickroumanoff.github.io/nexus-crowd-plugin/
 ##Prerequisites
 * JDK 8 is installed
 * Apache Maven is installed
-* Sonatype Nexus OSS 3.1.x is installed 
+* Sonatype Nexus OSS 3.2.x is installed 
 
 #####Directory naming convention:
 When Nexus gets downloaded and unzipped, there are typically two directories created:
-* nexus-3.1.0-04
+* nexus-3.2.1-01
 * sonatype-work/nexus3
 
 To avoid confusion, the conventions of the Sonatype reference will be used in the following descriptions:
-* nexus-3.1.0-04 will be referred to as **$install-dir**
+* nexus-3.2.1-01 will be referred to as **$install-dir**
 * sonatype-work/nexus3 will be referred to as **$data-dir**
 
 See [https://books.sonatype.com/nexus-book/reference3/install.html#directories](https://books.sonatype.com/nexus-book/reference3/install.html#directories) for reference.
