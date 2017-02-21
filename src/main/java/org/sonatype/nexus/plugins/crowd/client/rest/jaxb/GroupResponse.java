@@ -10,6 +10,9 @@
  */
 package org.sonatype.nexus.plugins.crowd.client.rest.jaxb;
 
+import java.util.List;
+
+import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -18,6 +21,13 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement(name="group")
 public class GroupResponse {
+    /**
+     * Capture any unknown elements that might be returned by newer crowd REST API versions, 
+     * thus avoiding exceptions during JAXB unmarshalling
+     */
+    @XmlAnyElement(lax = true)
+    protected List<Object> any;
+
     @XmlAttribute
     public String name;
 
