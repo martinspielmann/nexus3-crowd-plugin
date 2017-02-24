@@ -69,7 +69,7 @@ This might be a security risk and is also the reason why this property defaults 
 After installation you have to activate the plugin in the administration frontend.
 You have to login with an administrative nexus account to do so. The default admin credentials are
 * username: *admin*
-* password: *admin123*
+* password: *admin123* (don'T forget to change it!)
 
 After login you can navigate to the realm administration.
 Activate the plugin by dragging it to the right hand side:
