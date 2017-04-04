@@ -27,7 +27,7 @@ See [https://books.sonatype.com/nexus-book/reference3/install.html#directories](
 
 ## Installation
 
-####1.Build the plugin
+#### 1.Build the plugin
 Build and install the into your local maven repository using the following commands:
 ```
 git clone https://github.com/pingunaut/nexus3-crowd-plugin.git
