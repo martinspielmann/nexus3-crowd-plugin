@@ -2,71 +2,114 @@ package com.pingunaut.nexus3.crowd.plugin.internal;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import javax.cache.configuration.Configuration;
+import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
 import com.pingunaut.nexus3.crowd.plugin.internal.entity.CachedToken;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
+import org.ehcache.Cache;
+import org.ehcache.CacheManager;
+import org.ehcache.ValueSupplier;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.core.config.BaseCacheConfiguration;
+import org.ehcache.expiry.Duration;
+import org.ehcache.expiry.Expiry;
+import org.sonatype.nexus.cache.internal.ehcache.EhCacheManagerProvider;
 
 @Singleton
 @Named("CrowdCacheProvider")
 public class CacheProvider {
 
-	private static final String TOKEN_CACHE_NAME = "crowd_plugin_tokens";
-	private static final String RESPONSES_CACHE_NAME = "crowd_plugin_responses";
-	private static final String GROUPS_KEY_PREFIX = "groups_";
+    private static final String TOKEN_CACHE_NAME = "crowd_plugin_tokens";
+    private static final String RESPONSES_CACHE_NAME = "crowd_plugin_responses";
+    private static final String GROUPS_KEY_PREFIX = "groups_";
 
-	// cache lifetime 15m
-	private static final int TTL_SECONDS = 3600/4;
-	// max cached elements 32000
-	private static final int MAX_CACHED_ELEMENTS = 32000;
+    // cache lifetime 15m
+    private static final int TTL_SECONDS = 3600 / 4;
 
+    private EhCacheManagerProvider provider;
 
-	public void putToken(String username, CachedToken crowdToken) {
-		tokenCache().put(new Element(username, crowdToken));
-	}
+    private Cache<String, CachedToken> tokenCache;
+    private Cache<String, Set> responseCache;
 
-	private Cache tokenCache(){
-		if (!CacheManager.getInstance().cacheExists(TOKEN_CACHE_NAME)) {
-			CacheManager.getInstance().addCache(newCache(TOKEN_CACHE_NAME));
-		}
-		return CacheManager.getInstance().getCache(TOKEN_CACHE_NAME);
-	}
+    @Inject
+    public CacheProvider(EhCacheManagerProvider provider) {
+        this.provider = provider;
+        tokenCache = createTokenCache();
+        responseCache = createResponseCache();
+    }
 
-	private Cache responseCache(){
-		if (!CacheManager.getInstance().cacheExists(RESPONSES_CACHE_NAME)) {
-			CacheManager.getInstance().addCache(newCache(RESPONSES_CACHE_NAME));
-		}
-		return CacheManager.getInstance().getCache(RESPONSES_CACHE_NAME);
+    public void putToken(String username, CachedToken crowdToken) {
+        tokenCache.put(username, crowdToken);
+    }
 
-	}
+    private Cache<String, Set> createResponseCache() {
+        CacheConfigurationBuilder<String, Set> c =
+                CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, Set.class, ResourcePoolsBuilder
+                        .heap(100))
+                        .withExpiry(new Expiry<String, Set>() {
+                            @Override
+                            public Duration getExpiryForCreation(String key, Set value) {
+                                return Duration.of(TTL_SECONDS, TimeUnit.SECONDS);
+                            }
 
-	private Cache newCache(String name){
-		return new Cache(name, MAX_CACHED_ELEMENTS, false, false, TTL_SECONDS, TTL_SECONDS);
+                            @Override
+                            public Duration getExpiryForAccess(String key, ValueSupplier<? extends Set> value) {
+                                return null;  // Keeping the existing expiry
+                            }
 
-	}
+                            @Override
+                            public Duration getExpiryForUpdate(String key, ValueSupplier<? extends Set> oldValue, Set newValue) {
+                                return null;  // Keeping the existing expiry
+                            }
+                        });
 
-	public Optional<CachedToken> getToken(String username) {
-		Element element = tokenCache().get(username);
-		if(element!=null){
-			return Optional.ofNullable((CachedToken) element.getObjectValue());
-		}
-		return Optional.empty();
-	}
+        return cacheManager().createCache(RESPONSES_CACHE_NAME, c);
+    }
 
-	@SuppressWarnings("unchecked")
-	public Optional<Set<String>> getGroups(String username) {
-		Element element = responseCache().get(GROUPS_KEY_PREFIX+username);
-		if(element!=null){
-			return Optional.ofNullable((Set<String>) element.getObjectValue());
-		}
-		return Optional.empty();
-	}
+    private Cache<String, CachedToken> createTokenCache() {
+        CacheConfigurationBuilder<String, CachedToken> c =
+                CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, CachedToken.class, ResourcePoolsBuilder
+                        .heap(100))
+                        .withExpiry(new Expiry<String, CachedToken>() {
+                            @Override
+                            public Duration getExpiryForCreation(String key, CachedToken value) {
+                                return Duration.of(TTL_SECONDS, TimeUnit.SECONDS);
+                            }
 
-	public void putGroups(String username, Set<String> groups) {
-		responseCache().put(new Element(GROUPS_KEY_PREFIX+username, groups));
-	}
+                            @Override
+                            public Duration getExpiryForAccess(String key, ValueSupplier<? extends CachedToken> value) {
+                                return null;  // Keeping the existing expiry
+                            }
+
+                            @Override
+                            public Duration getExpiryForUpdate(String key, ValueSupplier<? extends CachedToken> oldValue, CachedToken newValue) {
+                                return null;  // Keeping the existing expiry
+                            }
+                        });
+        return cacheManager().createCache(TOKEN_CACHE_NAME, c);
+    }
+
+    private CacheManager cacheManager(){
+        return (CacheManager)provider.get();
+    }
+
+    public Optional<CachedToken> getToken(String username) {
+        CachedToken element = tokenCache.get(username);
+        return Optional.ofNullable(element);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Optional<Set<String>> getGroups(String username) {
+        Set<String> element = responseCache.get(GROUPS_KEY_PREFIX + username);
+        return Optional.ofNullable(element);
+    }
+
+    public void putGroups(String username, Set<String> groups) {
+        responseCache.put(GROUPS_KEY_PREFIX + username, groups);
+    }
 }
