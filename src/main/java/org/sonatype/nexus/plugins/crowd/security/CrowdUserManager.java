@@ -40,8 +40,6 @@ import com.google.common.collect.Sets;
 @Named("Crowd")
 @Singleton
 public class CrowdUserManager extends AbstractReadOnlyUserManager {
-    private static final Logger LOG = LoggerFactory.getLogger(CrowdUserManager.class);
-
     private static final String SOURCE = "Crowd";
 
     private RestClient restClient;
@@ -50,7 +48,7 @@ public class CrowdUserManager extends AbstractReadOnlyUserManager {
     public CrowdUserManager(RestClient rc) {
         restClient = Objects.requireNonNull(rc);
 
-        LOG.info("CrowdUserManager is starting...");
+        log.info("CrowdUserManager is starting...");
     }
 
     @Override
@@ -69,7 +67,7 @@ public class CrowdUserManager extends AbstractReadOnlyUserManager {
             User user = restClient.getUser(userId);
             return completeUserRolesAndSource(user);
         } catch (Exception e) {
-            LOG.error("Unable to look up user " + userId, e);
+            log.error("Unable to look up user " + userId, e);
             throw new UserNotFoundException(userId, e.getMessage(), e);
         }
     }
@@ -102,7 +100,7 @@ public class CrowdUserManager extends AbstractReadOnlyUserManager {
             return result;
 
         } catch (Exception e) {
-            LOG.error("Unable to get userlist", e);
+            log.error("Unable to get userlist", e);
             return Collections.emptySet();
         }
     }
@@ -120,7 +118,7 @@ public class CrowdUserManager extends AbstractReadOnlyUserManager {
         try {
             roleNames = restClient.getNestedGroups(userId);
         } catch (Exception e) {
-            LOG.error("Unable to look up user " + userId, e);
+            log.error("Unable to look up user " + userId, e);
             return Collections.emptySet();
         }
         return Sets.newHashSet(Iterables.transform(roleNames, new Function<String, RoleIdentifier>() {
