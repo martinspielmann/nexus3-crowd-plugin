@@ -13,20 +13,26 @@ package org.sonatype.nexus.plugins.crowd.client.rest;
 import java.net.URISyntaxException;
 import java.rmi.RemoteException;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import org.ehcache.Cache;
+import org.ehcache.CacheManager;
+import org.ehcache.ValueSupplier;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.CacheManagerBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.expiry.Duration;
+import org.ehcache.expiry.Expiry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.plugins.crowd.config.CrowdPluginConfiguration;
 import org.sonatype.nexus.security.role.Role;
 import org.sonatype.nexus.security.user.User;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
 
 /**
  * @author Issa Gorissen
@@ -36,68 +42,83 @@ import net.sf.ehcache.Element;
 public class CachingRestClient extends RestClient {
     private static final Logger LOG = LoggerFactory.getLogger(CachingRestClient.class);
 
-    private static final String REST_RESPONSE_CACHE = "com.atlassian.crowd.restresponse.cache";
+    private static final String GROUPS_CACHE_NAME = "com.atlassian.crowd.restresponse.cache.groups";
+    private static final String USERS_CACHE_NAME = "com.atlassian.crowd.restresponse.cache.users";
 
-    private CacheManager ehCacheManager;
+    private Cache<String, Set> groupsCache;
+    private Cache<String, User> userCache;
 
     @Inject
     public CachingRestClient(CrowdPluginConfiguration config) throws URISyntaxException {
         super(config);
-
-        ehCacheManager = CacheManager.getInstance();
-        // create a cache with max items = 10000 and TTL (live and idle) = 1 hour
-        Cache cache = new Cache(REST_RESPONSE_CACHE, 10000, false, false, config.getCacheTTL(), config.getCacheTTL());
-        ehCacheManager.addCacheIfAbsent(cache);
+        CacheManager ehCacheManager = CacheManagerBuilder.newCacheManagerBuilder().build();
+        ehCacheManager.init();
+        groupsCache = ehCacheManager.createCache(GROUPS_CACHE_NAME, createCacheConfig(String.class, Set.class, config));
+        userCache = ehCacheManager.createCache(USERS_CACHE_NAME, createCacheConfig(String.class, User.class, config));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Set<String> getNestedGroups(String username) throws RemoteException {
-        Cache cache = getCache();
         String key = "nestedgroups" + username;
-        Element elem = cache.get(key);
+        Set<String> elem = groupsCache.get(key);
         if (elem != null) {
             LOG.debug("getNestedGroups({}) from cache", username);
-            return (Set<String>) elem.getObjectValue();
+            return elem;
         }
 
         Set<String> groups = super.getNestedGroups(username);
-        cache.put(new Element(key, groups));
+        groupsCache.put(key, groups);
         return groups;
     }
 
     @Override
     public User getUser(String userid) throws RemoteException {
-        Cache cache = getCache();
         String key = "user" + userid;
-        Element elem = cache.get(key);
+        User elem = userCache.get(key);
         if (elem != null) {
             LOG.debug("getUser({}) from cache", userid);
-            return (User) elem.getObjectValue();
+            return elem;
         }
 
         User user = super.getUser(userid);
-        cache.put(new Element(key, user));
+        userCache.put(key, user);
         return user;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Set<Role> getAllGroups() throws RemoteException {
-        Cache cache = getCache();
         String key = "allgroups";
-        Element elem = cache.get(key);
+        Set<Role> elem = groupsCache.get(key);
         if (elem != null) {
             LOG.debug("getAllGroups from cache");
-            return (Set<Role>) elem.getObjectValue();
+            return elem;
         }
 
         Set<Role> groups = super.getAllGroups();
-        cache.put(new Element(key, groups));
+        groupsCache.put(key, groups);
         return groups;
     }
 
-    private Cache getCache() {
-        return ehCacheManager.getCache(REST_RESPONSE_CACHE);
+    private <K, V> CacheConfigurationBuilder<K, V> createCacheConfig(Class<K> keyClass, Class<V> valueClass, CrowdPluginConfiguration config) {
+        return CacheConfigurationBuilder.newCacheConfigurationBuilder(keyClass, valueClass, ResourcePoolsBuilder
+                .heap(100))
+                .withExpiry(new Expiry<K, V>() {
+                    @Override
+                    public Duration getExpiryForCreation(K key, V value) {
+                        return Duration.of(config.getCacheTTL(), TimeUnit.SECONDS);
+                    }
+
+                    @Override
+                    public Duration getExpiryForAccess(K key, ValueSupplier<? extends V> value) {
+                        return null;  // Keeping the existing expiry
+                    }
+
+                    @Override
+                    public Duration getExpiryForUpdate(K key, ValueSupplier<? extends V> oldValue, V newValue) {
+                        return null;  // Keeping the existing expiry
+                    }
+                });
     }
 }
