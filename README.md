@@ -5,7 +5,7 @@ It works with Nexus 3.3.x and Crowd 2.x
 
 This is a fork of http://patrickroumanoff.github.io/nexus-crowd-plugin/
 
-<a href='https://ci.martinspielmann.de/job/pingunaut/job/nexus3-crowd-plugin/job/master/'><img src='https://ci.martinspielmann.de/buildStatus/icon?job=pingunaut/nexus3-crowd-plugin/master'></a>
+<a href='https://ci.martinspielmann.de/job/nexus3-crowd-plugin/job/master/'><img src='https://ci.martinspielmann.de/buildStatus/icon?job=nexus3-crowd-plugin/master'></a>
 
 ## Prerequisites
 * JDK 8 is installed
