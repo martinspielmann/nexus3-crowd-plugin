@@ -14,11 +14,11 @@ This is a fork of http://patrickroumanoff.github.io/nexus-crowd-plugin/
 
 ##### Directory naming convention:
 When Nexus gets downloaded and unzipped, there are typically two directories created:
-* nexus-3.5.0-02
+* nexus-3.6.0-02
 * sonatype-work/nexus3
 
 To avoid confusion, the conventions of the Sonatype reference will be used in the following descriptions:
-* nexus-3.5.0-02 will be referred to as **$install-dir**
+* nexus-3.6.0-02 will be referred to as **$install-dir**
 * sonatype-work/nexus3 will be referred to as **$data-dir**
 
 See [https://books.sonatype.com/nexus-book/reference3/install.html#directories](https://books.sonatype.com/nexus-book/reference3/install.html#directories) for reference.
