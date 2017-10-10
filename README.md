@@ -27,20 +27,20 @@ See [https://books.sonatype.com/nexus-book/reference3/install.html#directories](
 
 ## Installation
 
-#### 2. Download latest release into nexus system folder
+#### 1. Download latest release into nexus system folder
 ```
-cd *[**$install-dir**/system/]*
+cd $install-dir/system/
 wget https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.2.6/nexus3-crowd-plugin-3.2.6.jar
 ```
 
-#### 3. Add bundle to startup properties
-Append the following line to *startup.properties* file found in *[**$install-dir**/etc/karaf]*
+#### 2. Add bundle to startup properties
+Append the following line to *startup.properties* file found in **$install-dir**/etc/karaf
 ```
 reference\:file\:nexus3-crowd-plugin-3.2.6.jar = 200
 ```
 
-#### 4. Create crowd.properties
-Create a *crowd.properties* file in *[**$install-dir**/etc]*<br/>
+#### 3. Create crowd.properties
+Create a *crowd.properties* file in **$install-dir**/etc<br/>
 The file has to contain the following properties:
 ```
 crowd.server.url=http://localhost:8095/crowd (replace by your crowd url)
@@ -101,7 +101,7 @@ karaf@root()>
 #### 3. Install plugin bundle
   Within the console just type
   ```
-  bundle:install -s file://[ABSOLUTE_PATH_TO_YOUR_JAR]
+  bundle:install -s file://ABSOLUTE_PATH_TO_YOUR_JAR
   ```
 
 ## Contributing
