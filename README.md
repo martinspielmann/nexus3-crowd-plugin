@@ -27,31 +27,23 @@ See [https://books.sonatype.com/nexus-book/reference3/install.html#directories](
 
 ## Installation
 
-#### 1.Build the plugin
-Build and install the into your local maven repository using the following commands:
+#### 2. Download latest release into nexus system folder
 ```
-git clone https://github.com/pingunaut/nexus3-crowd-plugin.git
-cd nexus3-crowd-plugin
-mvn install
-```
-
-#### 2. Copy all needed jars into nexus system folder
-```
-cp -ra ~/.m2/repository/com/pingunaut *[**$install-dir**/system/com]*
+cd *[**$install-dir**/system/]*
+wget https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.2.6/nexus3-crowd-plugin-3.2.6.jar
 ```
 
 #### 3. Add bundle to startup properties
-Append the following line to *startup.properties* file found in *[**$install-dir**/etc/karaf]*<br />
-Please replace [PLUGIN_VERSION] by the current plugin version.
+Append the following line to *startup.properties* file found in *[**$install-dir**/etc/karaf]*
 ```
-mvn\:com.pingunaut.nexus/nexus3-crowd-plugin/[PLUGIN_VERSION] = 200
+reference\:file\:nexus3-crowd-plugin-3.2.6.jar = 200
 ```
 
 #### 4. Create crowd.properties
 Create a *crowd.properties* file in *[**$install-dir**/etc]*<br/>
 The file has to contain the following properties:
 ```
-crowd.server.url=http://localhost:8095/crowd (replace by your nexus url)
+crowd.server.url=http://localhost:8095/crowd (replace by your crowd url)
 application.name=nexus (replace by your nexus application name configured in crowd)
 application.password=nexus (replace by your nexus application password configured in crowd)
 cache.authentication=false (should authentication be cached? default is false)
@@ -86,7 +78,16 @@ A good starting point is mapping one crowd group to *nx-admin* role, so you can 
 That's it. You should no be able to logout and login with your Crowd user (provided that your Crowd user is in one of you previously mapped groups).
 
 ## Development
-####1. Start nexus with console
+
+#### 1.Build the plugin
+Build and install the into your local maven repository using the following commands:
+```
+git clone https://github.com/pingunaut/nexus3-crowd-plugin.git
+cd nexus3-crowd-plugin
+mvn install
+```
+
+#### 2. Start nexus with console
 Move into your **$install-dir**. Edit the file bin/nexus.vmoptions to contain the following line
 ```
 -Dkaraf.startLocalConsole=true
@@ -97,7 +98,7 @@ Your console should look like this afterwards:
 karaf@root()> 
 ```
   
-#### 2. Install plugin bundle
+#### 3. Install plugin bundle
   Within the console just type
   ```
   bundle:install -s file://[ABSOLUTE_PATH_TO_YOUR_JAR]
