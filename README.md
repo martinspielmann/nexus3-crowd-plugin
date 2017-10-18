@@ -27,7 +27,8 @@ See [https://books.sonatype.com/nexus-book/reference3/install.html#directories](
 
 ## Installation
 
-#### 1. Download latest release into nexus system folder
+#### 1. Download latest release jar into nexus system folder
+Releases can be found here: https://github.com/pingunaut/nexus3-crowd-plugin/releases
 ```
 cd $install-dir/system/
 wget https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.2.6/nexus3-crowd-plugin-3.2.6.jar
