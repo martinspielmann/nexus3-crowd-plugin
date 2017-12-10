@@ -4,7 +4,7 @@ jdk: oraclejdk8
 env:
   global:
     - MAVEN_VERSION=3.0.5
-    - MAVEN_URL=https://archive.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
+    - MAVEN_URL=https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
     
 install:
   - wget -O - $MAVEN_URL | tar -xvz
