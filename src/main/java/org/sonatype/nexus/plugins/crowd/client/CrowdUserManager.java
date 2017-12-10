@@ -22,6 +22,7 @@ import javax.inject.Singleton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sonatype.nexus.plugins.crowd.CrowdAuthenticatingRealm;
 import org.sonatype.security.usermanagement.AbstractReadOnlyUserManager;
 import org.sonatype.security.usermanagement.RoleIdentifier;
 import org.sonatype.security.usermanagement.User;
@@ -41,8 +42,6 @@ import com.google.common.collect.Sets;
 @Typed(UserManager.class)
 @Named("Crowd")
 public class CrowdUserManager extends AbstractReadOnlyUserManager {
-
-    protected static final String REALM_NAME = "Crowd";
 
     protected static final String SOURCE = "Crowd";
 
@@ -66,7 +65,7 @@ public class CrowdUserManager extends AbstractReadOnlyUserManager {
      */
     @Override
     public String getAuthenticationRealmName() {
-        return REALM_NAME;
+        return CrowdAuthenticatingRealm.ROLE;
     }
 
     /**

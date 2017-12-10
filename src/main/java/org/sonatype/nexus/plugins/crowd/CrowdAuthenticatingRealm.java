@@ -25,16 +25,12 @@ import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.SimpleAuthenticationInfo;
 import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.authc.pam.UnsupportedTokenException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.subject.PrincipalCollection;
-import org.codehaus.plexus.personality.plexus.lifecycle.phase.Disposable;
-import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
-import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
 import org.eclipse.sisu.Description;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,43 +40,27 @@ import org.sonatype.nexus.plugins.crowd.client.CrowdClientHolder;
 @Typed(Realm.class)
 @Named(CrowdAuthenticatingRealm.ROLE)
 @Description("OSS Crowd Authentication Realm")
-public class CrowdAuthenticatingRealm extends AuthorizingRealm implements Initializable, Disposable {
+public class CrowdAuthenticatingRealm extends AuthorizingRealm {
 
 	public static final String ROLE = "NexusCrowdAuthenticationRealm";
 	private static final String DEFAULT_MESSAGE = "Could not retrieve info from Crowd.";
-	private static boolean active;
+	private static final Logger logger = LoggerFactory.getLogger(CrowdAuthenticatingRealm.class);
 
 	@Inject
 	private CrowdClientHolder crowdClientHolder;
 
-	private static final Logger logger = LoggerFactory.getLogger(CrowdAuthenticatingRealm.class);
-
-	public static boolean isActive() {
-		return active;
-	}
-
-	public void dispose() {
-		active = false;
-		logger.info("Crowd Realm deactivated...");
+	public CrowdAuthenticatingRealm() {
+		setName(ROLE);
 	}
 
 	@Override
-	public String getName() {
-		return CrowdAuthenticatingRealm.class.getName();
-	}
-
-	public void initialize() throws InitializationException {
-		logger.info("Crowd Realm activated...");
-		active = true;
+	public boolean supports(final AuthenticationToken token) {
+		return (token instanceof UsernamePasswordToken);
 	}
 
 	@Override
 	protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authenticationToken)
 			throws AuthenticationException {
-		if (!(authenticationToken instanceof UsernamePasswordToken)) {
-			throw new UnsupportedTokenException("Token of type " + authenticationToken.getClass().getName()
-					+ " is not supported.  A " + UsernamePasswordToken.class.getName() + " is required.");
-		}
 		UsernamePasswordToken token = (UsernamePasswordToken) authenticationToken;
 
 		String password = new String(token.getPassword());
