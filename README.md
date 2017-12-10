@@ -1,11 +1,7 @@
 Nexus Crowd Plugin [![Build Status](https://travis-ci.org/PatrickRoumanoff/nexus-crowd-plugin.png)](https://travis-ci.org/PatrickRoumanoff/nexus-crowd-plugin)
 ==================
 
-There is a build error as the current plugins this build relies on are not
-compatible with Maven 3.1 and I can't figure out how to setup travis to use
-a previous version.
-
-This plugin works with Nexus 2.9.x and Crowd 2.x
+This plugin works with Nexus 2.14.x and Crowd 2.x
 
 This is a fork of the original work done by sonatype, but as far as I can tell
 they stopped supporting it after Nexus 1.8, the code got moved quite a bit from
