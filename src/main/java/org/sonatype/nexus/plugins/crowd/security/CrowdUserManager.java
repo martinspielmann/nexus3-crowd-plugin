@@ -20,9 +20,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.plugins.crowd.client.rest.RestClient;
+import org.sonatype.nexus.plugins.crowd.client.rest.RestException;
 import org.sonatype.nexus.security.role.RoleIdentifier;
 import org.sonatype.nexus.security.user.AbstractReadOnlyUserManager;
 import org.sonatype.nexus.security.user.User;
@@ -66,9 +65,10 @@ public class CrowdUserManager extends AbstractReadOnlyUserManager {
         try {
             User user = restClient.getUser(userId);
             return completeUserRolesAndSource(user);
-        } catch (Exception e) {
-            log.error("Unable to look up user " + userId, e);
-            throw new UserNotFoundException(userId, e.getMessage(), e);
+        } catch (RestException e) {
+            String mesg = "Unable to look up user " + userId;
+            log.debug(mesg, e);
+            throw new UserNotFoundException(userId, mesg, e);
         }
     }
 

@@ -12,7 +12,6 @@
  */
 package org.sonatype.nexus.plugins.crowd.security;
 
-import java.rmi.RemoteException;
 import java.util.Objects;
 import java.util.Set;
 
@@ -35,6 +34,7 @@ import org.eclipse.sisu.Description;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.plugins.crowd.client.rest.RestClient;
+import org.sonatype.nexus.plugins.crowd.client.rest.RestException;
 import org.sonatype.nexus.plugins.crowd.config.CrowdPluginConfiguration;
 
 @Singleton
@@ -67,7 +67,7 @@ public class CrowdAuthenticatingRealm extends AuthorizingRealm {
         try {
             restClient.authenticate(token.getUsername(), password);
             return new SimpleAuthenticationInfo(token.getPrincipal(), token.getCredentials(), getName());
-        } catch (RemoteException re) {
+        } catch (RestException re) {
             throw new AccountException("Invalid login credentials for user '" + token.getUsername() + "'");
         }
     }

@@ -12,8 +12,6 @@
  */
 package org.sonatype.nexus.plugins.crowd.config;
 
-import java.rmi.RemoteException;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -23,12 +21,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.sonatype.nexus.plugins.crowd.client.rest.RestClient;
+import org.sonatype.nexus.plugins.crowd.client.rest.RestException;
 import org.sonatype.nexus.rest.Resource;
 
 
 /**
  * Intent of this class is to enable an admin to easily test if the Crowd
  * connection is working <b>without</b> enabling the Realm.
+ * 
+ * Can be tested through http://localhost:8081/service/siesta/crowd/test on a default Nexus setup
  * 
  * @author Justin Edelson
  * @author Issa Gorissen
@@ -44,7 +45,7 @@ public class CrowdTestResource implements Resource {
 
     @GET
     @Produces({MediaType.APPLICATION_XML})
-    public String get() throws RemoteException {
+    public String get() throws RestException {
         restClient.getCookieConfig();
         return "<status>OK</status>";
     }

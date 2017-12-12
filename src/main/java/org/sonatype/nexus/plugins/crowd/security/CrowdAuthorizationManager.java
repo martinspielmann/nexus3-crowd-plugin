@@ -12,7 +12,6 @@
  */
 package org.sonatype.nexus.plugins.crowd.security;
 
-import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -24,6 +23,7 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.plugins.crowd.client.rest.RestClient;
+import org.sonatype.nexus.plugins.crowd.client.rest.RestException;
 import org.sonatype.nexus.security.authz.AbstractReadOnlyAuthorizationManager;
 import org.sonatype.nexus.security.privilege.NoSuchPrivilegeException;
 import org.sonatype.nexus.security.privilege.Privilege;
@@ -68,7 +68,7 @@ public class CrowdAuthorizationManager extends AbstractReadOnlyAuthorizationMana
                 role.setSource(getSource());
             }
             return roles;
-        } catch (RemoteException e) {
+        } catch (RestException e) {
             LOG.error("Unable to load roles", e);
             return null;
         }

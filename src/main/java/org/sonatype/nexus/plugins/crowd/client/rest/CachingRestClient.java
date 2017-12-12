@@ -11,7 +11,6 @@
 package org.sonatype.nexus.plugins.crowd.client.rest;
 
 import java.net.URISyntaxException;
-import java.rmi.RemoteException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -59,7 +58,7 @@ public class CachingRestClient extends RestClient {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Set<String> getNestedGroups(String username) throws RemoteException {
+    public Set<String> getNestedGroups(String username) throws RestException {
         String key = "nestedgroups" + username;
         Set<String> elem = groupsCache.get(key);
         if (elem != null) {
@@ -73,7 +72,7 @@ public class CachingRestClient extends RestClient {
     }
 
     @Override
-    public User getUser(String userid) throws RemoteException {
+    public User getUser(String userid) throws RestException {
         String key = "user" + userid;
         User elem = userCache.get(key);
         if (elem != null) {
@@ -88,7 +87,7 @@ public class CachingRestClient extends RestClient {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set<Role> getAllGroups() throws RemoteException {
+    public Set<Role> getAllGroups() throws RestException {
         String key = "allgroups";
         Set<Role> elem = groupsCache.get(key);
         if (elem != null) {

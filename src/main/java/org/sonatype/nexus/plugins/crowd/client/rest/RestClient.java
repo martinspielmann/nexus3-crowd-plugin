@@ -13,10 +13,10 @@ package org.sonatype.nexus.plugins.crowd.client.rest;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -52,6 +52,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.plugins.crowd.client.rest.jaxb.AuthenticatePost;
@@ -112,9 +113,6 @@ public class RestClient {
                 .setDefaultCredentialsProvider(credsProvider)
                 .setDefaultRequestConfig(reqConfig);
 
-        // handling of compressed responses
-        hcBuilder.addInterceptorLast(new CompressedHttpResponseInterceptor());
-
 
         client = hcBuilder.build();
 
@@ -142,14 +140,14 @@ public class RestClient {
 
 
     /**
-     * Authenticates a user with crowd. If authentication failed, raises a <code>RemoteException</code>
+     * Authenticates a user with crowd. If authentication failed, raises a <code>RestException</code>
      * 
      * @param username
      * @param password
      * @return session token
-     * @throws RemoteException
+     * @throws RestException
      */
-    public void authenticate(String username, String password) throws RemoteException {
+    public void authenticate(String username, String password) throws RestException {
         HttpClientContext hc = HttpClientContext.create();
         HttpPost post = new HttpPost(crowdServer.resolve("authentication?username=" + urlEncode(username)));
 
@@ -172,8 +170,16 @@ public class RestClient {
 
             enablePreemptiveAuth(post, hc);
             HttpResponse response = client.execute(post);
-            if (response.getStatusLine().getStatusCode() != 200) {
-                handleHTTPError(response);
+            
+            switch (response.getStatusLine().getStatusCode()) {
+              case HttpURLConnection.HTTP_OK:
+                return;
+              
+              case HttpURLConnection.HTTP_BAD_REQUEST:
+                throw createRestException(response);
+              
+              default:
+                handleError(createRestException(response));
             }
 
         } catch (IOException | AuthenticationException ioe) {
@@ -189,9 +195,9 @@ public class RestClient {
      * 
      * @param username
      * @return a set of roles (as strings)
-     * @throws RemoteException
+     * @throws RestException
      */
-    public Set<String> getNestedGroups(String username) throws RemoteException {
+    public Set<String> getNestedGroups(String username) throws RestException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("getNestedGroups({})", username);
         }
@@ -211,9 +217,9 @@ public class RestClient {
      * Retrieves cookie configurations
      * 
      * @return a <code>ConfigCookieGetResponse</code>
-     * @throws RemoteException
+     * @throws RestException
      */
-    public ConfigCookieGetResponse getCookieConfig() throws RemoteException {
+    public ConfigCookieGetResponse getCookieConfig() throws RestException {
         HttpClientContext hc = HttpClientContext.create();
         HttpGet get = new HttpGet(crowdServer.resolve("config/cookie"));
 
@@ -227,7 +233,7 @@ public class RestClient {
             enablePreemptiveAuth(acceptXmlResponse(get), hc);
             HttpResponse response = client.execute(get);
             if (response.getStatusLine().getStatusCode() != 200) {
-                handleHTTPError(response);
+                handleError(createRestException(response));
             }
             configCookie = unmarshal(response, ConfigCookieGetResponse.class);
 
@@ -244,9 +250,9 @@ public class RestClient {
     /**
      * @param userid
      * @return a <code>org.sonatype.security.usermanagement.User</code> from Crowd by a userid
-     * @throws RemoteException
+     * @throws RestException
      */
-    public User getUser(String userid) throws RemoteException {
+    public User getUser(String userid) throws RestException {
         HttpClientContext hc = HttpClientContext.create();
         HttpGet get = new HttpGet(crowdServer.resolve("user?username=" + urlEncode(userid)));
 
@@ -259,8 +265,16 @@ public class RestClient {
         try {
             enablePreemptiveAuth(acceptXmlResponse(get), hc);
             HttpResponse response = client.execute(get);
-            if (response.getStatusLine().getStatusCode() != 200) {
-                handleHTTPError(response);
+            
+            switch(response.getStatusLine().getStatusCode()) {
+                case HttpURLConnection.HTTP_OK:
+                    break;
+                  
+                  case HttpURLConnection.HTTP_NOT_FOUND:
+                    throw createRestException(response);
+                  
+                  default:
+                    handleError(createRestException(response));
             }
 
             user = unmarshal(response, UserResponse.class);
@@ -282,10 +296,10 @@ public class RestClient {
      * @param email
      * @param filterGroups
      * @return
-     * @throws RemoteException
+     * @throws RestException
      * @throws UnsupportedEncodingException
      */
-    public Set<User> searchUsers(String userId) throws RemoteException {
+    public Set<User> searchUsers(String userId) throws RestException {
         LOG.debug("searchUsers({})", userId);
 
         HttpClientContext hc = HttpClientContext.create();
@@ -314,7 +328,7 @@ public class RestClient {
                     try {
                         HttpResponse response = client.execute(get);
                         if (response.getStatusLine().getStatusCode() != 200) {
-                            handleHTTPError(response);
+                            handleError(createRestException(response));
                         }
                         users = unmarshal(response, SearchUserGetResponse.class);
                     } finally {
@@ -352,9 +366,9 @@ public class RestClient {
     /**
      * 
      * @return all the crowd groups
-     * @throws RemoteException
+     * @throws RestException
      */
-    public Set<Role> getAllGroups() throws RemoteException {
+    public Set<Role> getAllGroups() throws RestException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("getAllGroups()");
         }
@@ -383,7 +397,7 @@ public class RestClient {
 
 
 
-    private Set<String> getGroupsFromCrowdLoop(HttpClientContext hc, StringBuilder request, int start, int maxResults) throws RemoteException {
+    private Set<String> getGroupsFromCrowdLoop(HttpClientContext hc, StringBuilder request, int start, int maxResults) throws RestException {
         Set<String> results = new HashSet<>();
         try {
             int startIndex = start;
@@ -397,10 +411,20 @@ public class RestClient {
 
                 try {
                     HttpResponse response = client.execute(get);
-                    if (response.getStatusLine().getStatusCode() != 200) {
-                        handleHTTPError(response);
+                    
+                    switch(response.getStatusLine().getStatusCode()) {
+                        case HttpURLConnection.HTTP_OK:
+                            break;
+                        
+                        case HttpURLConnection.HTTP_NOT_FOUND:
+                            throw createRestException(response);
+                        
+                        default:
+                            handleError(createRestException(response));
                     }
+
                     groups = unmarshal(response, GroupsResponse.class);
+                    
                 } finally {
                     get.releaseConnection();
                 }
@@ -471,13 +495,17 @@ public class RestClient {
         return um.unmarshal(new StreamSource(response.getEntity().getContent()), type).getValue();
     }
 
-    private void handleHTTPError(HttpResponse response) throws RemoteException {
+    private RestException createRestException(HttpResponse response) {
         StatusLine statusLine = response.getStatusLine();
         int status = statusLine.getStatusCode();
         String statusText = statusLine.getReasonPhrase();
         String body = null;
         if (response.getEntity() != null) {
-            body = response.getEntity().toString();
+            try {
+              body = EntityUtils.toString(response.getEntity(), "UTF-8");
+            } catch (Exception e) {
+              LOG.debug("Problem occured while reading a HTTP response", e);
+            }
         }
 
         StringBuilder strBuf = new StringBuilder();
@@ -487,11 +515,11 @@ public class RestClient {
             strBuf.append("\n").append(body);
         }
 
-        throw new RemoteException(strBuf.toString());
+        return new RestException(strBuf.toString());
     }
 
-    private void handleError(Exception e) throws RemoteException {
+    private void handleError(Exception e) throws RestException {
         LOG.error("Error occured while consuming Crowd REST service", e);
-        throw new RemoteException(e.getMessage());
+        throw new RestException(e.getMessage());
     }
 }
