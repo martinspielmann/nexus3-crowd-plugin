@@ -15,7 +15,7 @@
     <parent>
         <groupId>org.sonatype.nexus.plugins</groupId>
         <artifactId>nexus-plugins</artifactId>
-        <version>3.6.0-02</version>
+        <version>3.7.1-02</version>
     </parent>
 
     <groupId>com.pingunaut.nexus</groupId>
@@ -57,6 +57,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+		<version>3.7.0</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
