@@ -5,7 +5,7 @@ It works with Nexus 3.x and Crowd 2.x and 3.x
 
 This is a fork of http://patrickroumanoff.github.io/nexus-crowd-plugin/
 
-<a href='https://ci.martinspielmann.de/job/nexus3-crowd-plugin/job/master/'><img src='https://ci.martinspielmann.de/buildStatus/icon?job=nexus3-crowd-plugin/master'></a>
+[![Jenkins](https://img.shields.io/jenkins/s/https/ci.martinspielmann.de/job/pingunaut/job/nexus3-crowd-plugin/job/master.svg)](https://ci.martinspielmann.de/job/pingunaut/job/nexus3-crowd-plugin/job/master/)
 
 ## Prerequisites
 * JDK 8 is installed
@@ -66,15 +66,15 @@ You have to login with an administrative nexus account to do so. The default adm
 
 After login you can navigate to the realm administration.
 Activate the plugin by dragging it to the right hand side:
-<img style="border: 1px solid grey;" src='https://pseudorandombullshitgenerator.com/img/nexus_crowd.png'>
+<img style="border: 1px solid grey;" src='https://pseudorandombullshitgenerator.com/wp-content/uploads/2018/01/nexus_crowd.png'>
 #### 2. Map Crowd Groups to Nexus Roles
 As a last step you have to map your crowd groups to nexus internal roles.
-<img style="border: 1px solid grey;" src='https://pseudorandombullshitgenerator.com/img/nexus-5.png'>
+<img style="border: 1px solid grey;" src='https://pseudorandombullshitgenerator.com/wp-content/uploads/2018/01/nexus-5.png'>
 A good starting point is mapping one crowd group to *nx-admin* role, so you can start managing Nexus with your Crowd Login.
 * Choose a crowd group
 * Think up a new unique name for the mapped role
 * Add *nx-admin* to the contained roles
-<img style="border: 1px solid grey;" src='https://pseudorandombullshitgenerator.com/img/nexus-6.png'>
+<img style="border: 1px solid grey;" src='https://pseudorandombullshitgenerator.com/wp-content/uploads/2018/01/nexus-6.png'>
 
 That's it. You should no be able to logout and login with your Crowd user (provided that your Crowd user is in one of you previously mapped groups).
 
