@@ -76,7 +76,7 @@ public class CrowdUserManager extends AbstractReadOnlyUserManager {
 
 	@Override
 	public Set<User> listUsers() {
-		return client.findUsers().stream().map(u -> completeUserRolesAndSource(u)).collect(Collectors.toSet());
+		return client.findUsers().stream().map(this::completeUserRolesAndSource).collect(Collectors.toSet());
 	}
 
 	@Override
@@ -86,12 +86,15 @@ public class CrowdUserManager extends AbstractReadOnlyUserManager {
 
 	@Override
 	public Set<User> searchUsers(UserSearchCriteria criteria) {
-		return client.findUserByCriteria(criteria).stream().map(u->completeUserRolesAndSource(u)).collect(Collectors.toSet());
+		return client.findUserByCriteria(criteria).stream().map(this::completeUserRolesAndSource).collect(Collectors.toSet());
 	}
 
 	@Override
 	public User getUser(String userId) throws UserNotFoundException {
 		User u = client.findUserByUsername(userId);
+		if(u == null){
+			throw new UserNotFoundException(userId);
+		}
 		return completeUserRolesAndSource(u);
 	}
 
