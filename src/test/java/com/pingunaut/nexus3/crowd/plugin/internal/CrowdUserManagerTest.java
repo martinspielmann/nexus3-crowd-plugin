@@ -69,4 +69,10 @@ public class CrowdUserManagerTest {
 		Assert.assertEquals(u, m.getUser("1"));
 	}
 
+	@Test(expected = UserNotFoundException.class)
+	public void testGetUserWithNull() throws UserNotFoundException {
+		when(mockedClient.findUserByUsername("1")).thenReturn(null);
+        m.getUser("1");
+	}
+
 }
