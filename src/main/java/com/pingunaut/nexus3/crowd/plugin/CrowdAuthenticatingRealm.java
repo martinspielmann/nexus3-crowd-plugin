@@ -12,15 +12,8 @@
  */
 package com.pingunaut.nexus3.crowd.plugin;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
-
-import org.apache.shiro.authc.AuthenticationException;
-import org.apache.shiro.authc.AuthenticationInfo;
-import org.apache.shiro.authc.AuthenticationToken;
-import org.apache.shiro.authc.SimpleAuthenticationInfo;
-import org.apache.shiro.authc.UsernamePasswordToken;
+import com.pingunaut.nexus3.crowd.plugin.internal.CachingNexusCrowdClient;
+import org.apache.shiro.authc.*;
 import org.apache.shiro.authc.pam.UnsupportedTokenException;
 import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
@@ -29,7 +22,10 @@ import org.apache.shiro.subject.PrincipalCollection;
 import org.eclipse.sisu.Description;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.pingunaut.nexus3.crowd.plugin.internal.CachingNexusCrowdClient;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * The Class CrowdAuthenticatingRealm.
