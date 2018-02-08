@@ -12,14 +12,6 @@
  */
 package com.pingunaut.nexus3.crowd.plugin.internal;
 
-import java.util.Collections;
-import java.util.Set;
-
-import javax.enterprise.inject.Typed;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.security.authz.AbstractReadOnlyAuthorizationManager;
@@ -28,6 +20,13 @@ import org.sonatype.nexus.security.privilege.NoSuchPrivilegeException;
 import org.sonatype.nexus.security.privilege.Privilege;
 import org.sonatype.nexus.security.role.NoSuchRoleException;
 import org.sonatype.nexus.security.role.Role;
+
+import javax.enterprise.inject.Typed;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * @author justin

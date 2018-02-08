@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
  * <p>
  * This program is licensed to you under the Apache License Version 2.0,
@@ -12,16 +12,15 @@
  */
 package com.pingunaut.nexus3.crowd.plugin.internal;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
-
-import javax.inject.Named;
-import javax.inject.Singleton;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Singleton
 @Named

@@ -1,28 +1,21 @@
 package com.pingunaut.nexus3.crowd.plugin.internal.entity.mapper;
 
-import java.util.Set;
-
 import com.pingunaut.nexus3.crowd.plugin.internal.CrowdUserManager;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-
 import org.junit.Assert;
+import org.junit.Test;
 import org.sonatype.nexus.security.role.Role;
 import org.sonatype.nexus.security.user.User;
 import org.sonatype.nexus.security.user.UserStatus;
 
-import org.junit.Test;
+import java.util.Set;
 
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
