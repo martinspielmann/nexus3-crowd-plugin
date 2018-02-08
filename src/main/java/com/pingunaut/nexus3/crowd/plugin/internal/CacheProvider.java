@@ -1,12 +1,5 @@
 package com.pingunaut.nexus3.crowd.plugin.internal;
 
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import javax.inject.Named;
-import javax.inject.Singleton;
-
 import com.pingunaut.nexus3.crowd.plugin.internal.entity.CachedToken;
 import org.ehcache.Cache;
 import org.ehcache.CacheManager;
@@ -16,6 +9,12 @@ import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.ehcache.expiry.Duration;
 import org.ehcache.expiry.Expiry;
+
+import javax.inject.Named;
+import javax.inject.Singleton;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Singleton
 @Named("CrowdCacheProvider")

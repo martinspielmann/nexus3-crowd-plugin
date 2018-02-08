@@ -1,18 +1,10 @@
 package com.pingunaut.nexus3.crowd.plugin.internal;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.inject.Named;
-import javax.inject.Singleton;
-
+import com.google.common.base.Strings;
+import com.google.inject.Inject;
+import com.pingunaut.nexus3.crowd.plugin.NexusCrowdClient;
 import com.pingunaut.nexus3.crowd.plugin.internal.entity.CachedToken;
+import com.pingunaut.nexus3.crowd.plugin.internal.entity.mapper.CrowdMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -32,14 +24,20 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.pingunaut.nexus3.crowd.plugin.NexusCrowdClient;
-import com.pingunaut.nexus3.crowd.plugin.internal.entity.mapper.CrowdMapper;
 import org.sonatype.nexus.security.role.Role;
 import org.sonatype.nexus.security.user.User;
 import org.sonatype.nexus.security.user.UserSearchCriteria;
 
-import com.google.common.base.Strings;
-import com.google.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Singleton
 @Named("CachingNexusCrowdClient")

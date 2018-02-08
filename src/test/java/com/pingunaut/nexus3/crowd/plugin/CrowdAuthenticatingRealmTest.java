@@ -1,8 +1,5 @@
 package com.pingunaut.nexus3.crowd.plugin;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.pingunaut.nexus3.crowd.plugin.internal.CachingNexusCrowdClient;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -14,6 +11,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class CrowdAuthenticatingRealmTest {
 
