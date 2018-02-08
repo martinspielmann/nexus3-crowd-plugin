@@ -4,6 +4,7 @@ node {
 
    stage('Preparation') {
       git 'https://github.com/pingunaut/nexus3-crowd-plugin.git'
+      checkout scm
       mvnHome = tool 'M3'
       scannerHome = tool 'sonarqube-scanner'
    }
@@ -12,7 +13,6 @@ node {
    }
    stage('QA') {
       withSonarQubeEnv('sonar') {
-        sh 'ls -la'
         sh "${scannerHome}/bin/sonar-scanner"
       }
    }
