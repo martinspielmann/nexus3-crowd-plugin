@@ -1,18 +1,19 @@
 node {
    def mvnHome
+   def scannerHome
+
    stage('Preparation') {
       git 'https://github.com/pingunaut/nexus3-crowd-plugin.git'
+      checkout scm
       mvnHome = tool 'M3'
+      scannerHome = tool 'sonarqube-scanner'
    }
    stage('Build') {
-      if (isUnix()) {
-         sh "'${mvnHome}/bin/mvn' clean install"
-      } else {
-         bat(/"${mvnHome}\bin\mvn" clean install/)
-      }
+      sh "'${mvnHome}/bin/mvn' clean install"
    }
-   stage('Results') {
-      junit '**/target/surefire-reports/TEST-*.xml'
-      archive 'target/*.jar'
+   stage('QA') {
+      withSonarQubeEnv('sonar') {
+        sh "${scannerHome}/bin/sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME}"
+      }
    }
 }
