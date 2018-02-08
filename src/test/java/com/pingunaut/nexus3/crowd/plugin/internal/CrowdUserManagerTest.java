@@ -1,18 +1,18 @@
 package com.pingunaut.nexus3.crowd.plugin.internal;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.pingunaut.nexus3.crowd.plugin.CrowdAuthenticatingRealm;
+import org.junit.Assert;
+import org.junit.Test;
+import org.sonatype.nexus.security.user.User;
+import org.sonatype.nexus.security.user.UserNotFoundException;
+import org.sonatype.nexus.security.user.UserSearchCriteria;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.Assert;
-import org.junit.Test;
-import com.pingunaut.nexus3.crowd.plugin.CrowdAuthenticatingRealm;
-import org.sonatype.nexus.security.user.User;
-import org.sonatype.nexus.security.user.UserNotFoundException;
-import org.sonatype.nexus.security.user.UserSearchCriteria;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class CrowdUserManagerTest {
 

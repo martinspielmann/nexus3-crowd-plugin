@@ -12,24 +12,18 @@
  */
 package com.pingunaut.nexus3.crowd.plugin.internal;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.enterprise.inject.Typed;
-import javax.inject.Named;
-import javax.inject.Singleton;
-
+import com.google.inject.Inject;
 import com.pingunaut.nexus3.crowd.plugin.CrowdAuthenticatingRealm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.security.role.RoleIdentifier;
-import org.sonatype.nexus.security.user.AbstractReadOnlyUserManager;
-import org.sonatype.nexus.security.user.User;
-import org.sonatype.nexus.security.user.UserManager;
-import org.sonatype.nexus.security.user.UserNotFoundException;
-import org.sonatype.nexus.security.user.UserSearchCriteria;
+import org.sonatype.nexus.security.user.*;
 
-import com.google.inject.Inject;
+import javax.enterprise.inject.Typed;
+import javax.inject.Named;
+import javax.inject.Singleton;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author justin

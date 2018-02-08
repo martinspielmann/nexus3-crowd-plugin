@@ -1,8 +1,5 @@
 package com.pingunaut.nexus3.crowd.plugin.internal;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.security.NoSuchAlgorithmException;
@@ -12,8 +9,6 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class PasswordHasher {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PasswordHasher.class);
 
     private static final Random RANDOM = new SecureRandom();
     private static final int ITERATIONS = 1024;
