@@ -12,6 +12,7 @@ node {
    }
    stage('QA') {
       withSonarQubeEnv('sonar') {
+        sh 'ls -la'
         sh "${scannerHome}/bin/sonar-scanner"
       }
    }
