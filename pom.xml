@@ -64,6 +64,10 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <destFile>${project.build.directory}/jacoco.exec</destFile>
+                            <propertyName>surefireArgLine</propertyName>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>post-unit-test</id>
@@ -71,8 +75,14 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/jacoco.exec</dataFile>
+                            <outputDirectory>${project.build.outputDirectory}/jacoco.exec</outputDirectory>
+                        </configuration>
                     </execution>
                 </executions>
+
+
             </plugin>
             <plugin>
                 <groupId>org.apache.karaf.tooling</groupId>
