@@ -9,7 +9,7 @@ node {
       scannerHome = tool 'sonarqube-scanner'
    }
    stage('Build') {
-      sh "'${mvnHome}/bin/mvn' clean org.jacoco:jacoco-maven-plugin:prepare-agent install"
+      sh "'${mvnHome}/bin/mvn' clean install"
    }
    stage('QA') {
       withSonarQubeEnv('sonar') {
