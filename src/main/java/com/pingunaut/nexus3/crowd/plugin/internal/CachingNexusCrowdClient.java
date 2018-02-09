@@ -56,13 +56,8 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 		this.cache = cache;
 		this.authCacheEnabled = props.isCacheAuthenticationEnabled();
         LOGGER.info("Authentication Cache enabled: " + authCacheEnabled);
-
-		// check if crowd url ends with a "/" and if so, cut it. fixes #9
-		String uri = props.getServerUrl().endsWith("/") ? props.getServerUrl().substring(0, props.getServerUrl().length() - 1) : props.getServerUrl();
-		serverUri = URI.create(uri);
-
+		serverUri = URI.create(normalizeCrowdServerUri(props.getServerUrl()));
 		host = new HttpHost(serverUri.getHost(), serverUri.getPort(), serverUri.getScheme());
-
 		RequestConfig defaultRequestConfig = RequestConfig.custom()
 				.setConnectTimeout(15000)
 				.setSocketTimeout(15000)
@@ -72,6 +67,16 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 		credentialsProvider.setCredentials(new AuthScope(serverUri.getHost(), serverUri.getPort()), usernamePasswordCredentials);
 		client = HttpClientBuilder.create().setDefaultRequestConfig(defaultRequestConfig).setDefaultCredentialsProvider(credentialsProvider).build();
+	}
+
+    /**
+     * Check if crowd url ends with a "/" and if so, cut it. fixes #9
+     *
+     * @param serverUri
+     * @return the normalized server uri
+     */
+	protected String normalizeCrowdServerUri(String serverUri){
+        return serverUri.endsWith("/") ? serverUri.substring(0, serverUri.length() - 1) : serverUri;
 	}
 
 	// handle CloseableHttpResponse properly
@@ -90,7 +95,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 		return g;
 	}
 
-	protected void addDefaultHeaders(HttpUriRequest g) {
+	private void addDefaultHeaders(HttpUriRequest g) {
 		g.addHeader("X-Atlassian-Token", "nocheck");
 		g.addHeader("Accept", "application/json");
 	}
@@ -139,7 +144,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
         return new CachedToken(hash, salt);
 	}
 
-	protected CloseableHttpClient getClient() {
+	private CloseableHttpClient getClient() {
 		return client;
 	}
 
@@ -147,11 +152,11 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 	public Set<String> findRolesByUser(String username) {
 		Optional<Set<String>> cachedGroups = cache.getGroups(username);
 		if (cachedGroups.isPresent()) {
-			LOGGER.info("return groups from cache");
+			LOGGER.debug("return groups from cache");
 			return cachedGroups.get();
 		}
 		String restUri = restUri(String.format("user/group/nested?username=%s", username));
-		LOGGER.info("getting groups from "+restUri);
+		LOGGER.debug("getting groups from "+restUri);
 		return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings);
 	}
 
