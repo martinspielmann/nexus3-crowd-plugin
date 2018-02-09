@@ -62,7 +62,7 @@
                         </goals>
                     </execution>
                     <execution>
-                        <id>default-report</id>
+                        <id>jacoco-report</id>
                         <goals>
                             <goal>report</goal>
                         </goals>
