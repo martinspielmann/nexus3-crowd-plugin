@@ -4,10 +4,7 @@ import com.google.inject.Inject;
 import com.pingunaut.nexus3.crowd.plugin.CrowdAuthenticatingRealm;
 import com.pingunaut.nexus3.crowd.plugin.internal.entity.CachedToken;
 import com.pingunaut.nexus3.crowd.plugin.internal.entity.mapper.CrowdMapper;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.ProtocolVersion;
-import org.apache.http.StatusLine;
+import org.apache.http.*;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -115,7 +112,7 @@ public class CachingNexusCrowdClientTest {
         when(props.getApplicationPassword()).thenReturn("passw");
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
         try {
-            when(httpClient.execute(any(HttpHost.class), any(), any(ResponseHandler.class))).thenReturn("foo");
+            when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(ResponseHandler.class))).thenReturn("foo");
         }catch (IOException e){
 
         }
@@ -141,7 +138,7 @@ public class CachingNexusCrowdClientTest {
         when(props.getApplicationPassword()).thenReturn("passw");
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
         try {
-            when(httpClient.execute(any(HttpHost.class), any(), any(ResponseHandler.class))).thenReturn(null);
+            when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(ResponseHandler.class))).thenReturn(null);
         }catch (IOException e){
 
         }
@@ -168,7 +165,7 @@ public class CachingNexusCrowdClientTest {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
         when(cache.getToken(any())).thenReturn(Optional.of(new CachedToken(new byte[]{1,2,3}, new byte[]{1,2,3})));
         try {
-            when(httpClient.execute(any(HttpHost.class), any(), any(ResponseHandler.class))).thenReturn("foo");
+            when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(ResponseHandler.class))).thenReturn("foo");
         }catch (IOException e){
 
         }
@@ -185,25 +182,4 @@ public class CachingNexusCrowdClientTest {
         verify(cache, times(1)).putToken(any(),any());
     }
 
-    /*
-    public boolean authenticate(UsernamePasswordToken token) {
-        // check if token is cached
-        if(authCacheEnabled && authenticateFromCache(token)){
-            return true;
-        }
-
-        // if authentication with cached value fails or is skipped, crowd and check auth
-        String authRequest = CrowdMapper.toUsernamePasswordJsonString(token.getUsername(), token.getPassword());
-        String authResponse = executeQuery(httpPost(restUri("session"), new StringEntity(authRequest, ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
-
-        if (StringUtils.hasText(authResponse)) {
-            // authentication was successful
-            if(authCacheEnabled){
-                cache.putToken(token.getUsername(), createCachedToken(token.getPassword()));
-            }
-            return true;
-        }
-        // authentication failed
-        return false;
-    }*/
 }
