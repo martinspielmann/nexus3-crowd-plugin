@@ -110,10 +110,8 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 	@Override
 	public boolean authenticate(UsernamePasswordToken token) {
 		// check if token is cached
-		if(authCacheEnabled) {
-			if (authenticateFromCache(token)){
-				return true;
-			}
+		if(authCacheEnabled && authenticateFromCache(token)){
+			return true;
 		}
 
 		// if authentication with cached value fails or is skipped, crowd and check auth
@@ -127,7 +125,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
             }
             return true;
 		}
-        // authentication failed
+		// authentication failed
         return false;
 	}
 
@@ -146,8 +144,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
 	protected CachedToken createCachedToken(char[] input)  {
 		byte[] salt = PasswordHasher.getNextSalt();
-        byte[] hash = PasswordHasher.hash(input, salt);
-        return new CachedToken(hash, salt);
+        return new CachedToken(PasswordHasher.hash(input, salt), salt);
 	}
 
 	protected CloseableHttpClient getClient() {
