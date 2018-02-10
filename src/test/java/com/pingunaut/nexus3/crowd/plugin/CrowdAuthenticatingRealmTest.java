@@ -1,6 +1,8 @@
 package com.pingunaut.nexus3.crowd.plugin;
 
 import com.pingunaut.nexus3.crowd.plugin.internal.CachingNexusCrowdClient;
+import com.pingunaut.nexus3.crowd.plugin.internal.PasswordHasher;
+import com.pingunaut.nexus3.crowd.plugin.internal.entity.CachedToken;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -61,4 +63,5 @@ public class CrowdAuthenticatingRealmTest {
 		AuthenticationInfo info = r.doGetAuthenticationInfo(token);
 		Assert.assertNotNull(info);
 	}
+
 }

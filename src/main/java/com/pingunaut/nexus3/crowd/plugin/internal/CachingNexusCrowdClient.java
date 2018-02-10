@@ -111,14 +111,8 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 	public boolean authenticate(UsernamePasswordToken token) {
 		// check if token is cached
 		if(authCacheEnabled) {
-			Optional<CachedToken> cachedToken = cache.getToken(token.getUsername());
-			if (cachedToken.isPresent()) {
-				// check password
-                boolean isPasswordValid = PasswordHasher.isPasswordCorrect(token.getPassword(), cachedToken.get().salt, cachedToken.get().hash);
-				if (isPasswordValid) {
-                    LOGGER.info("Authenticated using cached credentials");
-					return true;
-				}
+			if (authenticateFromCache(token)){
+				return true;
 			}
 		}
 
@@ -133,18 +127,30 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
             }
             return true;
 		}
-
         // authentication failed
         return false;
 	}
 
-	private static CachedToken createCachedToken(char[] input)  {
+	protected boolean authenticateFromCache(UsernamePasswordToken token) {
+		Optional<CachedToken> cachedToken = cache.getToken(token.getUsername());
+		if (cachedToken.isPresent()) {
+            // check password
+            boolean isPasswordValid = PasswordHasher.isPasswordCorrect(token.getPassword(), cachedToken.get().salt, cachedToken.get().hash);
+            if (isPasswordValid) {
+                LOGGER.info("Authenticated using cached credentials");
+				return true;
+            }
+        }
+		return false;
+	}
+
+	protected CachedToken createCachedToken(char[] input)  {
 		byte[] salt = PasswordHasher.getNextSalt();
         byte[] hash = PasswordHasher.hash(input, salt);
         return new CachedToken(hash, salt);
 	}
 
-	private CloseableHttpClient getClient() {
+	protected CloseableHttpClient getClient() {
 		return client;
 	}
 
