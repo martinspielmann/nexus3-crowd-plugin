@@ -28,14 +28,13 @@ import org.mockito.Matchers;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.spi.CharsetProvider;
 import java.util.Optional;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 public class CachingNexusCrowdClientTest {
-
-    CachingNexusCrowdClient mockedClient = mock(CachingNexusCrowdClient.class);
 
     @Test
     public void testConstructor() {
@@ -51,6 +50,7 @@ public class CachingNexusCrowdClientTest {
 
     @Test
     public void testNormalizeCrowdServerUri() {
+        CachingNexusCrowdClient mockedClient = mock(CachingNexusCrowdClient.class);
         when(mockedClient.normalizeCrowdServerUri("sdfadsfa/")).thenCallRealMethod();
         String uri = mockedClient.normalizeCrowdServerUri("sdfadsfa/");
         Assert.assertEquals("sdfadsfa", uri);
@@ -58,6 +58,7 @@ public class CachingNexusCrowdClientTest {
 
     @Test
     public void testNormalizeCrowdServerUriThatsOkAlready() {
+        CachingNexusCrowdClient mockedClient = mock(CachingNexusCrowdClient.class);
         when(mockedClient.normalizeCrowdServerUri("sdfadsfa")).thenCallRealMethod();
         String uri = mockedClient.normalizeCrowdServerUri("sdfadsfa");
         Assert.assertEquals("sdfadsfa", uri);
@@ -100,6 +101,7 @@ public class CachingNexusCrowdClientTest {
 
     @Test
     public void testCreateCachedToken()  {
+        CachingNexusCrowdClient mockedClient = mock(CachingNexusCrowdClient.class);
         char[] input = new char[]{1,2,3};
         when(mockedClient.createCachedToken(input)).thenCallRealMethod();
         CachedToken t = mockedClient.createCachedToken(input);
@@ -114,6 +116,7 @@ public class CachingNexusCrowdClientTest {
         when(mockedClient.authenticate(token)).thenCallRealMethod();
         when(mockedClient.executeQuery(any(),any())).thenReturn("foo");
         when(mockedClient.getServerUriString()).thenReturn("bar");
+        when(mockedClient.restUri(anyString())).thenReturn("http://abc");
         boolean auth = mockedClient.authenticate(token);
         Assert.assertTrue(auth);
     }
@@ -125,6 +128,7 @@ public class CachingNexusCrowdClientTest {
         when(mockedClient.authenticate(token)).thenCallRealMethod();
         when(mockedClient.executeQuery(any(),any())).thenReturn(null);
         when(mockedClient.getServerUriString()).thenReturn("bar");
+        when(mockedClient.restUri(anyString())).thenReturn("http://abc");
         boolean auth = mockedClient.authenticate(token);
         Assert.assertFalse(auth);
     }
@@ -132,6 +136,7 @@ public class CachingNexusCrowdClientTest {
     @Test
     public void testAuthenticateCacheEnabled()  {
         CachingNexusCrowdClient mockedClient = mock(CachingNexusCrowdClient.class);
+
         UsernamePasswordToken token = new UsernamePasswordToken("user123", "password123");
         when(mockedClient.authenticate(token)).thenCallRealMethod();
         when(mockedClient.executeQuery(any(),any())).thenReturn("foo");
@@ -139,11 +144,76 @@ public class CachingNexusCrowdClientTest {
         CacheProvider cache = mock(CacheProvider.class);
         when(mockedClient.getCache()).thenReturn(cache);
         when(mockedClient.isAuthCacheEnabled()).thenReturn(Boolean.TRUE);
+        when(mockedClient.restUri(anyString())).thenReturn("http://abc");
         boolean auth = mockedClient.authenticate(token);
 
         Assert.assertTrue(auth);
         verify(cache, times(1)).putToken(any(),any());
     }
 
+    @Test
+    public void testAuthenticateCacheEnabledCacheHit()  {
+        CachingNexusCrowdClient mockedClient = mock(CachingNexusCrowdClient.class);
 
+        UsernamePasswordToken token = new UsernamePasswordToken("user123", "password123");
+        when(mockedClient.authenticate(token)).thenCallRealMethod();
+        when(mockedClient.executeQuery(any(),any())).thenReturn("foo");
+        when(mockedClient.getServerUriString()).thenReturn("bar");
+        CacheProvider cache = mock(CacheProvider.class);
+        when(mockedClient.getCache()).thenReturn(cache);
+        when(mockedClient.authenticateFromCache(any())).thenReturn(true);
+        when(mockedClient.isAuthCacheEnabled()).thenReturn(Boolean.TRUE);
+        boolean auth = mockedClient.authenticate(token);
+
+        Assert.assertTrue(auth);
+        verify(cache, times(0)).putToken(any(),any());
+    }
+
+    @Test
+    public void testGetServerUriString(){
+        CrowdProperties props = mock(CrowdProperties.class);
+        CacheProvider cache = mock(CacheProvider.class);
+        when(props.isCacheAuthenticationEnabled()).thenReturn(Boolean.TRUE);
+        when(props.getServerUrl()).thenReturn("http://foobar/");
+        when(props.getApplicationName()).thenReturn("app");
+        when(props.getApplicationPassword()).thenReturn("passw");
+        CachingNexusCrowdClient client = new CachingNexusCrowdClient(props, cache);
+        Assert.assertEquals("http://foobar", client.getServerUriString());
+    }
+
+    @Test
+    public void testIsAuthCacheEnabled(){
+        CrowdProperties props = mock(CrowdProperties.class);
+        CacheProvider cache = mock(CacheProvider.class);
+        when(props.isCacheAuthenticationEnabled()).thenReturn(Boolean.TRUE);
+        when(props.getServerUrl()).thenReturn("http://foobar/");
+        when(props.getApplicationName()).thenReturn("app");
+        when(props.getApplicationPassword()).thenReturn("passw");
+        CachingNexusCrowdClient client = new CachingNexusCrowdClient(props, cache);
+        Assert.assertTrue(client.isAuthCacheEnabled());
+    }
+
+    @Test
+    public void testGetCache() {
+        CrowdProperties props = mock(CrowdProperties.class);
+        CacheProvider cache = mock(CacheProvider.class);
+        when(props.isCacheAuthenticationEnabled()).thenReturn(Boolean.TRUE);
+        when(props.getServerUrl()).thenReturn("http://foobar/");
+        when(props.getApplicationName()).thenReturn("app");
+        when(props.getApplicationPassword()).thenReturn("passw");
+        CachingNexusCrowdClient client = new CachingNexusCrowdClient(props, cache);
+        Assert.assertEquals(cache, client.getCache());
+    }
+
+    @Test
+    public void testRestUri() {
+        CrowdProperties props = mock(CrowdProperties.class);
+        CacheProvider cache = mock(CacheProvider.class);
+        when(props.isCacheAuthenticationEnabled()).thenReturn(Boolean.TRUE);
+        when(props.getServerUrl()).thenReturn("http://foobar/");
+        when(props.getApplicationName()).thenReturn("app");
+        when(props.getApplicationPassword()).thenReturn("passw");
+        CachingNexusCrowdClient client = new CachingNexusCrowdClient(props, cache);
+        Assert.assertEquals("http://foobar/rest/usermanagement/1/blub", client.restUri("blub"));
+    }
 }
