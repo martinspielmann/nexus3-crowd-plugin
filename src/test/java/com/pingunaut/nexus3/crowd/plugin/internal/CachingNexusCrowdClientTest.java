@@ -116,6 +116,7 @@ public class CachingNexusCrowdClientTest {
         when(mockedClient.authenticate(token)).thenCallRealMethod();
         when(mockedClient.executeQuery(any(),any())).thenReturn("foo");
         when(mockedClient.getServerUriString()).thenReturn("bar");
+        when(mockedClient.restUri(anyString())).thenReturn("http://abc");
         boolean auth = mockedClient.authenticate(token);
         Assert.assertTrue(auth);
     }
@@ -127,6 +128,7 @@ public class CachingNexusCrowdClientTest {
         when(mockedClient.authenticate(token)).thenCallRealMethod();
         when(mockedClient.executeQuery(any(),any())).thenReturn(null);
         when(mockedClient.getServerUriString()).thenReturn("bar");
+        when(mockedClient.restUri(anyString())).thenReturn("http://abc");
         boolean auth = mockedClient.authenticate(token);
         Assert.assertFalse(auth);
     }
@@ -142,6 +144,7 @@ public class CachingNexusCrowdClientTest {
         CacheProvider cache = mock(CacheProvider.class);
         when(mockedClient.getCache()).thenReturn(cache);
         when(mockedClient.isAuthCacheEnabled()).thenReturn(Boolean.TRUE);
+        when(mockedClient.restUri(anyString())).thenReturn("http://abc");
         boolean auth = mockedClient.authenticate(token);
 
         Assert.assertTrue(auth);
