@@ -80,11 +80,11 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 	}
 
 	// handle CloseableHttpResponse properly
-	private <T> T executeQuery(final HttpUriRequest request, final ResponseHandler<? extends T> responseHandler) {
+	protected <T> T executeQuery(final HttpUriRequest request, final ResponseHandler<? extends T> responseHandler) {
 		try {
 			return getClient().execute(host, request, responseHandler);
 		} catch (IOException e) {
-			LOGGER.error("error executng query", e);
+			LOGGER.error("error executing query", e);
 			return null;
 		}
 	}
@@ -110,7 +110,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 	@Override
 	public boolean authenticate(UsernamePasswordToken token) {
 		// check if token is cached
-		if(authCacheEnabled && authenticateFromCache(token)){
+		if(isAuthCacheEnabled() && authenticateFromCache(token)){
 			return true;
 		}
 
@@ -120,8 +120,8 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
 		if (StringUtils.hasText(authResponse)) {
             // authentication was successful
-            if(authCacheEnabled){
-                cache.putToken(token.getUsername(), createCachedToken(token.getPassword()));
+            if(isAuthCacheEnabled()){
+                getCache().putToken(token.getUsername(), createCachedToken(token.getPassword()));
             }
             return true;
 		}
@@ -211,6 +211,18 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 	}
 
 	private String restUri(String path) {
-		return String.format("%s/rest/usermanagement/1/%s", serverUri.toString(), path);
+		return String.format("%s/rest/usermanagement/1/%s", getServerUriString(), path);
 	}
+
+	protected String getServerUriString(){
+	    return serverUri.toString();
+    }
+
+    protected boolean isAuthCacheEnabled(){
+	    return authCacheEnabled;
+    }
+
+    protected CacheProvider getCache() {
+        return cache;
+    }
 }

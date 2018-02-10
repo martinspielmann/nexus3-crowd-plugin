@@ -7,19 +7,24 @@ import com.pingunaut.nexus3.crowd.plugin.internal.entity.mapper.CrowdMapper;
 import org.apache.http.*;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
+import org.apache.http.protocol.HttpContext;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.util.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Matchers;
 
 import java.io.IOException;
 import java.net.URI;
@@ -104,82 +109,41 @@ public class CachingNexusCrowdClientTest {
 
     @Test
     public void testAuthenticateNoCache()  {
-        CrowdProperties props = mock(CrowdProperties.class);
-        CacheProvider cache = mock(CacheProvider.class);
-        when(props.isCacheAuthenticationEnabled()).thenReturn(Boolean.FALSE);
-        when(props.getServerUrl()).thenReturn("http://foobar/");
-        when(props.getApplicationName()).thenReturn("app");
-        when(props.getApplicationPassword()).thenReturn("passw");
-        CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
-        try {
-            when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(ResponseHandler.class))).thenReturn("foo");
-        }catch (IOException e){
-
-        }
-        CachingNexusCrowdClient client = new CachingNexusCrowdClient(props, cache){
-            @Override
-            protected CloseableHttpClient getClient() {
-                return httpClient;
-            }
-        };
+        CachingNexusCrowdClient mockedClient = mock(CachingNexusCrowdClient.class);
         UsernamePasswordToken token = new UsernamePasswordToken("user123", "password123");
-        boolean auth = client.authenticate(token);
-
+        when(mockedClient.authenticate(token)).thenCallRealMethod();
+        when(mockedClient.executeQuery(any(),any())).thenReturn("foo");
+        when(mockedClient.getServerUriString()).thenReturn("bar");
+        boolean auth = mockedClient.authenticate(token);
         Assert.assertTrue(auth);
     }
 
     @Test
     public void testAuthenticateNoCacheAuthFail()  {
-        CrowdProperties props = mock(CrowdProperties.class);
-        CacheProvider cache = mock(CacheProvider.class);
-        when(props.isCacheAuthenticationEnabled()).thenReturn(Boolean.FALSE);
-        when(props.getServerUrl()).thenReturn("http://foobar/");
-        when(props.getApplicationName()).thenReturn("app");
-        when(props.getApplicationPassword()).thenReturn("passw");
-        CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
-        try {
-            when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(ResponseHandler.class))).thenReturn(null);
-        }catch (IOException e){
-
-        }
-        CachingNexusCrowdClient client = new CachingNexusCrowdClient(props, cache){
-            @Override
-            protected CloseableHttpClient getClient() {
-                return httpClient;
-            }
-        };
+        CachingNexusCrowdClient mockedClient = mock(CachingNexusCrowdClient.class);
         UsernamePasswordToken token = new UsernamePasswordToken("user123", "password123");
-        boolean auth = client.authenticate(token);
-
+        when(mockedClient.authenticate(token)).thenCallRealMethod();
+        when(mockedClient.executeQuery(any(),any())).thenReturn(null);
+        when(mockedClient.getServerUriString()).thenReturn("bar");
+        boolean auth = mockedClient.authenticate(token);
         Assert.assertFalse(auth);
     }
 
     @Test
     public void testAuthenticateCacheEnabled()  {
-        CrowdProperties props = mock(CrowdProperties.class);
-        CacheProvider cache = mock(CacheProvider.class);
-        when(props.isCacheAuthenticationEnabled()).thenReturn(Boolean.TRUE);
-        when(props.getServerUrl()).thenReturn("http://foobar/");
-        when(props.getApplicationName()).thenReturn("app");
-        when(props.getApplicationPassword()).thenReturn("passw");
-        CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
-        when(cache.getToken(any())).thenReturn(Optional.of(new CachedToken(new byte[]{1,2,3}, new byte[]{1,2,3})));
-        try {
-            when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(ResponseHandler.class))).thenReturn("foo");
-        }catch (IOException e){
-
-        }
-        CachingNexusCrowdClient client = new CachingNexusCrowdClient(props, cache){
-            @Override
-            protected CloseableHttpClient getClient() {
-                return httpClient;
-            }
-        };
+        CachingNexusCrowdClient mockedClient = mock(CachingNexusCrowdClient.class);
         UsernamePasswordToken token = new UsernamePasswordToken("user123", "password123");
-        boolean auth = client.authenticate(token);
+        when(mockedClient.authenticate(token)).thenCallRealMethod();
+        when(mockedClient.executeQuery(any(),any())).thenReturn("foo");
+        when(mockedClient.getServerUriString()).thenReturn("bar");
+        CacheProvider cache = mock(CacheProvider.class);
+        when(mockedClient.getCache()).thenReturn(cache);
+        when(mockedClient.isAuthCacheEnabled()).thenReturn(Boolean.TRUE);
+        boolean auth = mockedClient.authenticate(token);
 
         Assert.assertTrue(auth);
         verify(cache, times(1)).putToken(any(),any());
     }
+
 
 }
