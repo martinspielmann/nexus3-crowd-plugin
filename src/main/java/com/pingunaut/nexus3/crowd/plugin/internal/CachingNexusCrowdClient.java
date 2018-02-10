@@ -210,7 +210,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 		return executeQuery(httpGet(restUri("search?entity-type=group&expand=group")), CrowdMapper::toRoles);
 	}
 
-	private String restUri(String path) {
+	protected String restUri(String path) {
 		return String.format("%s/rest/usermanagement/1/%s", getServerUriString(), path);
 	}
 
