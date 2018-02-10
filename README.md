@@ -3,9 +3,10 @@ This plugin adds a Crowd realm to Sonatype Nexus OSS and enables you to authenti
 
 It works with Nexus 3.x and Crowd 2.x and 3.x
 
-This is a fork of http://patrickroumanoff.github.io/nexus-crowd-plugin/
-
 [![Jenkins](https://img.shields.io/jenkins/s/https/ci.martinspielmann.de/job/pingunaut/job/nexus3-crowd-plugin/job/master.svg)](https://ci.martinspielmann.de/job/pingunaut/job/nexus3-crowd-plugin/job/master/)
+[![License](https://img.shields.io/badge/license-Apache%20License%202.0-green.svg)](https://github.com/pingunaut/nexus3-crowd-plugin/blob/master/LICENSE)
+[![SonarQube Coverage](https://img.shields.io/sonar/https/sonarcloud.io/nexus3-crowd-plugin/coverage.svg)](https://sonarcloud.io/component_measures?id=nexus3-crowd-plugin&metric=coverage)
+
 
 ## Prerequisites
 * JDK 8 is installed
