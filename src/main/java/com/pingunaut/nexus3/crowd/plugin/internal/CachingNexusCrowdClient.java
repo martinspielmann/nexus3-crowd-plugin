@@ -116,7 +116,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
         // if authentication with cached value fails or is skipped, crowd and check auth
         String authRequest = CrowdMapper.toUsernamePasswordJsonString(token.getUsername(), token.getPassword());
-        String authResponse = executeQuery(httpPost(restUri("authenticate"), new StringEntity(authRequest, ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
+        String authResponse = executeQuery(httpPost(restUri("authentication"), new StringEntity(authRequest, ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
 
         if (StringUtils.hasText(authResponse)) {
             // authentication was successful
