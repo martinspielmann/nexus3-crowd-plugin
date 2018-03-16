@@ -30,13 +30,13 @@ public class CrowdMapperTest {
 	public void testToAuthToken() {
 		HttpResponse response = mock(HttpResponse.class);
 		StatusLine statusLine = mock(StatusLine.class);
-		HttpEntity httpEntity = new StringEntity("{\"expand\":\"user\",\"token\":\"sometoken\"}", ContentType.APPLICATION_JSON);
+		HttpEntity httpEntity = new StringEntity("{\"name\":\"someName\"}", ContentType.APPLICATION_JSON);
 
 		when(response.getStatusLine()).thenReturn(statusLine);
 		when(response.getEntity()).thenReturn(httpEntity);
-		when(statusLine.getStatusCode()).thenReturn(201);
+		when(statusLine.getStatusCode()).thenReturn(200);
 
-		assertEquals("sometoken", CrowdMapper.toAuthToken(response));
+		assertEquals("someName", CrowdMapper.toAuthToken(response));
 	}
 
 	@Test

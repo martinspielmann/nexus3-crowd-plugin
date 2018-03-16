@@ -96,7 +96,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
     }
 
     private void addDefaultHeaders(HttpUriRequest g) {
-        g.addHeader("X-Atlassian-Token", "nocheck");
+        g.addHeader("X-Atlassian-Token", "no-check");
         g.addHeader("Accept", "application/json");
     }
 
@@ -115,8 +115,8 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
         }
 
         // if authentication with cached value fails or is skipped, crowd and check auth
-        String authRequest = CrowdMapper.toUsernamePasswordJsonString(token.getUsername(), token.getPassword());
-        String authResponse = executeQuery(httpPost(restUri("authentication"), new StringEntity(authRequest, ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
+        String authRequest = CrowdMapper.toPasswordJsonString( token.getPassword());
+        String authResponse = executeQuery(httpPost(restUri("authentication?username=" + token.getUsername()), new StringEntity(authRequest, ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
 
         if (StringUtils.hasText(authResponse)) {
             // authentication was successful
