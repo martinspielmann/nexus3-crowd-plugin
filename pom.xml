@@ -11,7 +11,7 @@
 
     <groupId>com.pingunaut.nexus</groupId>
     <artifactId>nexus3-crowd-plugin</artifactId>
-    <version>3.4.1-SNAPSHOT</version>
+    <version>3.4.0.beta3</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <packaging>bundle</packaging>
@@ -148,4 +148,8 @@
             </plugins>
         </pluginManagement>
     </build>
+
+  <scm>
+    <tag>nexus3-crowd-plugin-3.4.0.beta3</tag>
+  </scm>
 </project>
