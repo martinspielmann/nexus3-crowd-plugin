@@ -19,6 +19,7 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
@@ -35,7 +36,12 @@ public class CrowdProperties {
     public CrowdProperties() {
         configuration = new Properties();
         try {
-            configuration.load(Files.newInputStream(Paths.get(".","etc", CONFIG_FILE)));
+            Path p = Paths.get(System.getProperty("karaf.data"),  "etc", CONFIG_FILE);
+            if(!Files.exists(p)){
+                LOGGER.warn("DEPRECATION: Please place your crowd.properties  in the $data-dir/etc/ to be able to update without copy manual copy steps");
+                p = Paths.get(".","etc", CONFIG_FILE);
+            }
+            configuration.load(Files.newInputStream(p));
         } catch (IOException e) {
             LOGGER.error("Error reading crowd properties", e);
         }
