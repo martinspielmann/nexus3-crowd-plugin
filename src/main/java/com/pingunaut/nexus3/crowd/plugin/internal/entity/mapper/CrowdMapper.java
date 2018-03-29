@@ -43,14 +43,14 @@ public class CrowdMapper {
 				CrowdUserManager.SOURCE, true, null, null);
 	}
 
-	public static String toUsernamePasswordJsonString(String username, char[] password) {
-		return GSON.toJson(UsernamePassword.of(username, password));
+	public static String toPasswordJsonString(char[] password) {
+		return GSON.toJson(Password.of( password));
 	}
 
 	public static String toAuthToken(HttpResponse r) {
-		if (r.getStatusLine().getStatusCode() == 201) {
+		if (r.getStatusLine().getStatusCode() == 200) {
 			try {
-				return GSON.fromJson(EntityUtils.toString(r.getEntity()), CrowdTokenResult.class).getToken();
+				return GSON.fromJson(EntityUtils.toString(r.getEntity()), AuthenticationResult.class).getName();
 			} catch (JsonSyntaxException | ParseException | IOException e) {
                 logMappingException(e);
             }
