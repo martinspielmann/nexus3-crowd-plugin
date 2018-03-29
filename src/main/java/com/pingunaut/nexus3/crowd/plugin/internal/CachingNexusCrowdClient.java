@@ -43,31 +43,31 @@ import java.util.stream.Collectors;
 @Named("CachingNexusCrowdClient")
 public class CachingNexusCrowdClient implements NexusCrowdClient {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CachingNexusCrowdClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CachingNexusCrowdClient.class);
 
-	private final CloseableHttpClient client;
-	private final CacheProvider cache;
-	private final URI serverUri;
-	private final HttpHost host;
-	private final boolean authCacheEnabled;
+    private final CloseableHttpClient client;
+    private final CacheProvider cache;
+    private final URI serverUri;
+    private final HttpHost host;
+    private final boolean authCacheEnabled;
 
-	@Inject
-	public CachingNexusCrowdClient(CrowdProperties props, CacheProvider cache) {
-		this.cache = cache;
-		this.authCacheEnabled = props.isCacheAuthenticationEnabled();
+    @Inject
+    public CachingNexusCrowdClient(CrowdProperties props, CacheProvider cache) {
+        this.cache = cache;
+        this.authCacheEnabled = props.isCacheAuthenticationEnabled();
         LOGGER.info("Authentication Cache enabled: " + authCacheEnabled);
-		serverUri = URI.create(normalizeCrowdServerUri(props.getServerUrl()));
-		host = new HttpHost(serverUri.getHost(), serverUri.getPort(), serverUri.getScheme());
-		RequestConfig defaultRequestConfig = RequestConfig.custom()
-				.setConnectTimeout(15000)
-				.setSocketTimeout(15000)
-				.setConnectionRequestTimeout(15000)
-				.build();
-		UsernamePasswordCredentials usernamePasswordCredentials = new UsernamePasswordCredentials(props.getApplicationName(), props.getApplicationPassword());
-		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-		credentialsProvider.setCredentials(new AuthScope(serverUri.getHost(), serverUri.getPort()), usernamePasswordCredentials);
-		client = HttpClientBuilder.create().setDefaultRequestConfig(defaultRequestConfig).setDefaultCredentialsProvider(credentialsProvider).build();
-	}
+        serverUri = URI.create(normalizeCrowdServerUri(props.getServerUrl()));
+        host = new HttpHost(serverUri.getHost(), serverUri.getPort(), serverUri.getScheme());
+        RequestConfig defaultRequestConfig = RequestConfig.custom()
+                .setConnectTimeout(15000)
+                .setSocketTimeout(15000)
+                .setConnectionRequestTimeout(15000)
+                .build();
+        UsernamePasswordCredentials usernamePasswordCredentials = new UsernamePasswordCredentials(props.getApplicationName(), props.getApplicationPassword());
+        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(new AuthScope(serverUri.getHost(), serverUri.getPort()), usernamePasswordCredentials);
+        client = HttpClientBuilder.create().setDefaultRequestConfig(defaultRequestConfig).setDefaultCredentialsProvider(credentialsProvider).build();
+    }
 
     /**
      * Check if crowd url ends with a "/" and if so, cut it. fixes #9
@@ -75,151 +75,151 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
      * @param serverUri
      * @return the normalized server uri
      */
-	protected String normalizeCrowdServerUri(String serverUri){
+    protected String normalizeCrowdServerUri(String serverUri) {
         return serverUri.endsWith("/") ? serverUri.substring(0, serverUri.length() - 1) : serverUri;
-	}
+    }
 
-	// handle CloseableHttpResponse properly
-	protected <T> T executeQuery(final HttpUriRequest request, final ResponseHandler<? extends T> responseHandler) {
-		try {
-			return getClient().execute(host, request, responseHandler);
-		} catch (IOException e) {
-			LOGGER.error("error executing query", e);
-			return null;
-		}
-	}
+    // handle CloseableHttpResponse properly
+    protected <T> T executeQuery(final HttpUriRequest request, final ResponseHandler<? extends T> responseHandler) {
+        try {
+            return getClient().execute(host, request, responseHandler);
+        } catch (IOException e) {
+            LOGGER.error("error executing query", e);
+            return null;
+        }
+    }
 
-	private HttpGet httpGet(String query) {
-		HttpGet g = new HttpGet(query);
-		addDefaultHeaders(g);
-		return g;
-	}
+    private HttpGet httpGet(String query) {
+        HttpGet g = new HttpGet(query);
+        addDefaultHeaders(g);
+        return g;
+    }
 
-	private void addDefaultHeaders(HttpUriRequest g) {
-		g.addHeader("X-Atlassian-Token", "nocheck");
-		g.addHeader("Accept", "application/json");
-	}
+    private void addDefaultHeaders(HttpUriRequest g) {
+        g.addHeader("X-Atlassian-Token", "no-check");
+        g.addHeader("Accept", "application/json");
+    }
 
-	private HttpPost httpPost(String query, HttpEntity entity) {
-		HttpPost p = new HttpPost(query);
-		addDefaultHeaders(p);
-		p.setEntity(entity);
-		return p;
-	}
+    private HttpPost httpPost(String query, HttpEntity entity) {
+        HttpPost p = new HttpPost(query);
+        addDefaultHeaders(p);
+        p.setEntity(entity);
+        return p;
+    }
 
-	@Override
-	public boolean authenticate(UsernamePasswordToken token) {
-		// check if token is cached
-		if(isAuthCacheEnabled() && authenticateFromCache(token)){
-			return true;
-		}
+    @Override
+    public boolean authenticate(UsernamePasswordToken token) {
+        // check if token is cached
+        if (isAuthCacheEnabled() && authenticateFromCache(token)) {
+            return true;
+        }
 
-		// if authentication with cached value fails or is skipped, crowd and check auth
-        String authRequest = CrowdMapper.toUsernamePasswordJsonString(token.getUsername(), token.getPassword());
-        String authResponse = executeQuery(httpPost(restUri("session"), new StringEntity(authRequest, ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
+        // if authentication with cached value fails or is skipped, crowd and check auth
+        String authRequest = CrowdMapper.toPasswordJsonString( token.getPassword());
+        String authResponse = executeQuery(httpPost(restUri("authentication?username=" + token.getUsername()), new StringEntity(authRequest, ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
 
-		if (StringUtils.hasText(authResponse)) {
+        if (StringUtils.hasText(authResponse)) {
             // authentication was successful
-            if(isAuthCacheEnabled()){
+            if (isAuthCacheEnabled()) {
                 getCache().putToken(token.getUsername(), createCachedToken(token.getPassword()));
             }
             return true;
-		}
-		// authentication failed
+        }
+        // authentication failed
         return false;
-	}
+    }
 
-	protected boolean authenticateFromCache(UsernamePasswordToken token) {
-		Optional<CachedToken> cachedToken = cache.getToken(token.getUsername());
-		if (cachedToken.isPresent()) {
+    protected boolean authenticateFromCache(UsernamePasswordToken token) {
+        Optional<CachedToken> cachedToken = cache.getToken(token.getUsername());
+        if (cachedToken.isPresent()) {
             // check password
             boolean isPasswordValid = PasswordHasher.isPasswordCorrect(token.getPassword(), cachedToken.get().salt, cachedToken.get().hash);
             if (isPasswordValid) {
                 LOGGER.info("Authenticated using cached credentials");
-				return true;
+                return true;
             }
         }
-		return false;
-	}
-
-	protected CachedToken createCachedToken(char[] input)  {
-		byte[] salt = PasswordHasher.getNextSalt();
-        return new CachedToken(PasswordHasher.hash(input, salt), salt);
-	}
-
-	protected CloseableHttpClient getClient() {
-		return client;
-	}
-
-	@Override
-	public Set<String> findRolesByUser(String username) {
-		Optional<Set<String>> cachedGroups = cache.getGroups(username);
-		if (cachedGroups.isPresent()) {
-			LOGGER.debug("return groups from cache");
-			return cachedGroups.get();
-		}
-		String restUri = restUri(String.format("user/group/nested?username=%s", username));
-		LOGGER.debug("getting groups from "+restUri);
-		return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings);
-	}
-
-	@Override
-	public User findUserByUsername(String username) {
-		return executeQuery(httpGet(restUri(String.format("user?username=%s", username))), CrowdMapper::toUser);
-	}
-
-	@Override
-	public Role findRoleByRoleId(String roleId) {
-		return executeQuery(httpGet(restUri(String.format("group?groupname=%s", roleId))), CrowdMapper::toRole);
-	}
-
-	@Override
-	public Set<String> findAllUsernames() {
-		return findUsers().stream().map(User::getUserId).collect(Collectors.toSet());
-	}
-
-	@Override
-	public Set<User> findUsers() {
-		return executeQuery(httpGet(restUri("search?entity-type=user&expand=user")), CrowdMapper::toUsers);
-	}
-
-	@Override
-	public Set<User> findUserByCriteria(UserSearchCriteria criteria) {
-		String query = createQueryFromCriteria(criteria);
-		return executeQuery(httpGet(restUri(String.format("search?entity-type=user&expand=user&restriction=%s", query))), CrowdMapper::toUsers);
-	}
-
-	private String createQueryFromCriteria(UserSearchCriteria criteria) {
-		StringBuilder query = new StringBuilder("active=true");
-		if (!Strings.isNullOrEmpty(criteria.getUserId())) {
-			query.append(" AND name=\"").append(criteria.getUserId()).append("*\"");
-		}
-		if (!Strings.isNullOrEmpty(criteria.getEmail())) {
-			query.append(" AND email=\"").append(criteria.getEmail()).append("*\"");
-		}
-		try {
-			return URLEncoder.encode(query.toString(), StandardCharsets.UTF_8.toString());
-		} catch (UnsupportedEncodingException e) {
-			LOGGER.error("ouch... your platform does not support utf-8?", e);
-			return "";
-		}
-	}
-
-	@Override
-	public Set<Role> findRoles() {
-		return executeQuery(httpGet(restUri("search?entity-type=group&expand=group")), CrowdMapper::toRoles);
-	}
-
-	protected String restUri(String path) {
-		return String.format("%s/rest/usermanagement/1/%s", getServerUriString(), path);
-	}
-
-	protected String getServerUriString(){
-	    return serverUri.toString();
+        return false;
     }
 
-    protected boolean isAuthCacheEnabled(){
-	    return authCacheEnabled;
+    protected CachedToken createCachedToken(char[] input) {
+        byte[] salt = PasswordHasher.getNextSalt();
+        return new CachedToken(PasswordHasher.hash(input, salt), salt);
+    }
+
+    protected CloseableHttpClient getClient() {
+        return client;
+    }
+
+    @Override
+    public Set<String> findRolesByUser(String username) {
+        Optional<Set<String>> cachedGroups = cache.getGroups(username);
+        if (cachedGroups.isPresent()) {
+            LOGGER.debug("return groups from cache");
+            return cachedGroups.get();
+        }
+        String restUri = restUri(String.format("user/group/nested?username=%s", username));
+        LOGGER.debug("getting groups from " + restUri);
+        return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings);
+    }
+
+    @Override
+    public User findUserByUsername(String username) {
+        return executeQuery(httpGet(restUri(String.format("user?username=%s", username))), CrowdMapper::toUser);
+    }
+
+    @Override
+    public Role findRoleByRoleId(String roleId) {
+        return executeQuery(httpGet(restUri(String.format("group?groupname=%s", roleId))), CrowdMapper::toRole);
+    }
+
+    @Override
+    public Set<String> findAllUsernames() {
+        return findUsers().stream().map(User::getUserId).collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<User> findUsers() {
+        return executeQuery(httpGet(restUri("search?entity-type=user&expand=user")), CrowdMapper::toUsers);
+    }
+
+    @Override
+    public Set<User> findUserByCriteria(UserSearchCriteria criteria) {
+        String query = createQueryFromCriteria(criteria);
+        return executeQuery(httpGet(restUri(String.format("search?entity-type=user&expand=user&restriction=%s", query))), CrowdMapper::toUsers);
+    }
+
+    private String createQueryFromCriteria(UserSearchCriteria criteria) {
+        StringBuilder query = new StringBuilder("active=true");
+        if (!Strings.isNullOrEmpty(criteria.getUserId())) {
+            query.append(" AND name=\"").append(criteria.getUserId()).append("*\"");
+        }
+        if (!Strings.isNullOrEmpty(criteria.getEmail())) {
+            query.append(" AND email=\"").append(criteria.getEmail()).append("*\"");
+        }
+        try {
+            return URLEncoder.encode(query.toString(), StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.error("ouch... your platform does not support utf-8?", e);
+            return "";
+        }
+    }
+
+    @Override
+    public Set<Role> findRoles() {
+        return executeQuery(httpGet(restUri("search?entity-type=group&expand=group")), CrowdMapper::toRoles);
+    }
+
+    protected String restUri(String path) {
+        return String.format("%s/rest/usermanagement/1/%s", getServerUriString(), path);
+    }
+
+    protected String getServerUriString() {
+        return serverUri.toString();
+    }
+
+    protected boolean isAuthCacheEnabled() {
+        return authCacheEnabled;
     }
 
     protected CacheProvider getCache() {
