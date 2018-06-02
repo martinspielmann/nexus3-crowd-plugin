@@ -1,19 +1,28 @@
-node {
-   def mvnHome
-   def scannerHome
-
-   stage('Preparation') {
-      git 'https://github.com/pingunaut/nexus3-crowd-plugin.git'
-      checkout scm
-      mvnHome = tool 'M3'
-      scannerHome = tool 'sonarqube-scanner'
-   }
-   stage('Build') {
-      sh "'${mvnHome}/bin/mvn' clean install"
-   }
-   stage('QA') {
-      withSonarQubeEnv('sonar') {
-        sh "${scannerHome}/bin/sonar-scanner"
-      }
-   }
+pipeline {
+    agent any
+    tools {
+	jdk 'jdk10'
+        maven 'apache-maven-3.0.1' 
+    }
+    stages {
+        stage('Preparation') {
+            steps {
+		git 'https://github.com/pingunaut/nexus3-crowd-plugin.git'
+		checkout scm
+            }
+        }
+        stage('Build') {
+            steps {
+		sh "mvn clean install"
+            }
+        }
+        stage('QA') {
+            steps {
+		def scannerHome = tool 'sonarqube-scanner'
+                withSonarQubeEnv('sonar') {
+                    sh "${scannerHome}/bin/sonar-scanner"
+                }
+            }
+        }
+    }
 }
