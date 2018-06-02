@@ -2,7 +2,7 @@ pipeline {
     agent any
     tools {
 	jdk 'jdk10'
-        maven 'apache-maven-3.0.1' 
+        maven 'M3' 
     }
     stages {
         stage('Preparation') {
@@ -18,10 +18,12 @@ pipeline {
         }
         stage('QA') {
             steps {
-		def scannerHome = tool 'sonarqube-scanner'
-                withSonarQubeEnv('sonar') {
-                    sh "${scannerHome}/bin/sonar-scanner"
-                }
+		script {
+		    def scannerHome = tool 'sonarqube-scanner'
+                    withSonarQubeEnv('sonar') {
+                    	sh "${scannerHome}/bin/sonar-scanner"
+                    }
+		}
             }
         }
     }
