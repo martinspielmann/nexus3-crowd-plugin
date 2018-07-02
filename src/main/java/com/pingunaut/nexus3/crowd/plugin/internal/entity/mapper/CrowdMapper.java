@@ -145,6 +145,6 @@ public class CrowdMapper {
 		}catch(IOException e) {
 			// no content available. just log status code
 		}
-		LOGGER.error(String.format("Error with request %s - %d", content, r.getStatusLine().getStatusCode()));
+		LOGGER.error(String.format("Error with request %s - STATUS %d", content, r.getStatusLine().getStatusCode()));
 	}
 }
