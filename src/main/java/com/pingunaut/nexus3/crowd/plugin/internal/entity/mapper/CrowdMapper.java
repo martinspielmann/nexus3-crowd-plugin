@@ -1,5 +1,6 @@
 package com.pingunaut.nexus3.crowd.plugin.internal.entity.mapper;
 
+import org.apache.commons.io.IOUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.pingunaut.nexus3.crowd.plugin.internal.CrowdUserManager;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.security.role.Role;
 import org.sonatype.nexus.security.user.User;
 import org.sonatype.nexus.security.user.UserStatus;
+
 
 import java.io.IOException;
 import java.util.Collections;
@@ -137,6 +139,12 @@ public class CrowdMapper {
 	}
 
 	private static void logResponseException(HttpResponse r){
-		LOGGER.error(String.format("Error with request %s - %d", r.getEntity(), r.getStatusLine().getStatusCode()));
+		String content = "";
+		try {
+			content = IOUtils.toString(r.getEntity().getContent());
+		}catch(IOException e) {
+			// no content available. just log status code
+		}
+		LOGGER.error(String.format("Error with request %s - %d", content, r.getStatusLine().getStatusCode()));
 	}
 }
