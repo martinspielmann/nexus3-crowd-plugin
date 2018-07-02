@@ -1,7 +1,7 @@
 pipeline {
     agent any
     tools {
-	jdk 'jdk10'
+        jdk 'jdk8'
         maven 'M3' 
     }
     stages {
@@ -13,17 +13,17 @@ pipeline {
         }
         stage('Build') {
             steps {
-		sh "mvn clean install"
+                sh "mvn clean install"
             }
         }
         stage('QA') {
             steps {
-		script {
-		    def scannerHome = tool 'sonarqube-scanner'
+                script {
+                    def scannerHome = tool 'sonarqube-scanner'
                     withSonarQubeEnv('sonar') {
-                    	sh "${scannerHome}/bin/sonar-scanner"
+                        sh "${scannerHome}/bin/sonar-scanner"
                     }
-		}
+                }
             }
         }
     }
