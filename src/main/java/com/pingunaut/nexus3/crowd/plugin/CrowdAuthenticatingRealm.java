@@ -31,12 +31,12 @@ import javax.inject.Singleton;
  * The Class CrowdAuthenticatingRealm.
  */
 @Singleton
-@Named
+@Named(CrowdAuthenticatingRealm.NAME)
 @Description("Crowd Authentication Realm")
 public class CrowdAuthenticatingRealm extends AuthorizingRealm {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrowdAuthenticatingRealm.class);
-	public static final String NAME = CrowdAuthenticatingRealm.class.getName();
+	public static final String NAME = "CrowdAuthenticatingRealm";
 	private CachingNexusCrowdClient client;
 
 	/**
@@ -48,16 +48,7 @@ public class CrowdAuthenticatingRealm extends AuthorizingRealm {
 	@Inject
 	public CrowdAuthenticatingRealm(final CachingNexusCrowdClient client) {
 		this.client = client;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.shiro.realm.CachingRealm#getName()
-	 */
-	@Override
-	public String getName() {
-		return NAME;
+		setName(NAME);
 	}
 
 	/*
