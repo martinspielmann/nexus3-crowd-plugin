@@ -11,26 +11,26 @@
 package org.sonatype.nexus.plugins.crowd.client.rest;
 
 public class RestException extends Exception {
+	private static final long serialVersionUID = 8299574203640049391L;
 
-  public RestException() {
-    super();
-  }
+	public RestException() {
+		super();
+	}
 
-  public RestException(String message) {
-    super(message);
-  }
+	public RestException(String message) {
+		super(message);
+	}
 
-  public RestException(Throwable cause) {
-    super(cause);
-  }
+	public RestException(Throwable cause) {
+		super(cause);
+	}
 
-  public RestException(String message, Throwable cause) {
-    super(message, cause);
-  }
+	public RestException(String message, Throwable cause) {
+		super(message, cause);
+	}
 
-  public RestException(String message, Throwable cause, boolean enableSuppression,
-      boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
-  }
+	public RestException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+		super(message, cause, enableSuppression, writableStackTrace);
+	}
 
 }

@@ -18,20 +18,19 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.ehcache.Cache;
 import org.ehcache.CacheManager;
-import org.ehcache.ValueSupplier;
 import org.ehcache.config.builders.CacheConfigurationBuilder;
 import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.ehcache.expiry.Duration;
-import org.ehcache.expiry.Expiry;
+import org.ehcache.expiry.Expirations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.plugins.crowd.config.CrowdPluginConfiguration;
 import org.sonatype.nexus.security.role.Role;
 import org.sonatype.nexus.security.user.User;
-
 
 /**
  * @author Issa Gorissen
@@ -39,85 +38,116 @@ import org.sonatype.nexus.security.user.User;
 @Named
 @Singleton
 public class CachingRestClient extends RestClient {
-    private static final Logger LOG = LoggerFactory.getLogger(CachingRestClient.class);
+	private static final Logger LOG = LoggerFactory.getLogger(CachingRestClient.class);
 
-    private static final String GROUPS_CACHE_NAME = "com.atlassian.crowd.restresponse.cache.groups";
-    private static final String USERS_CACHE_NAME = "com.atlassian.crowd.restresponse.cache.users";
+	private static final String GROUPS_CACHE_NAME = CachingRestClient.class.getName() + "#cache.groups";
+	private static final String USERS_CACHE_NAME = CachingRestClient.class.getName() + "#cache.users";
+	private static final String AUTH_CACHE_NAME = CachingRestClient.class.getName() + "#cache.auths";
+	private static final String KEY_ALL_GROUPS = CachingRestClient.class.getName() + "#allgroups";
 
-    private Cache<String, Set> groupsCache;
-    private Cache<String, User> userCache;
+	private static final int DEFAULT_CACHE_HEAP_SIZE = 1000;
+	
+	private CacheManager ehCacheManager;
+	private Cache<String, User> userCache;
+	private Cache<String, String> authCache;
 
-    @Inject
-    public CachingRestClient(CrowdPluginConfiguration config) throws URISyntaxException {
-        super(config);
-        CacheManager ehCacheManager = CacheManagerBuilder.newCacheManagerBuilder().build();
-        ehCacheManager.init();
-        groupsCache = ehCacheManager.createCache(GROUPS_CACHE_NAME, createCacheConfig(String.class, Set.class, config));
-        userCache = ehCacheManager.createCache(USERS_CACHE_NAME, createCacheConfig(String.class, User.class, config));
-    }
+	@SuppressWarnings("rawtypes")
+	private Cache<String, Set> groupsCache;
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Set<String> getNestedGroups(String username) throws RestException {
-        String key = "nestedgroups" + username;
-        Set<String> elem = groupsCache.get(key);
-        if (elem != null) {
-            LOG.debug("getNestedGroups({}) from cache", username);
-            return elem;
-        }
+	@Inject
+	public CachingRestClient(CrowdPluginConfiguration config) throws URISyntaxException {
+		super(config);
 
-        Set<String> groups = super.getNestedGroups(username);
-        groupsCache.put(key, groups);
-        return groups;
-    }
+		ehCacheManager = CacheManagerBuilder.newCacheManagerBuilder().build();
+		ehCacheManager.init();
+		groupsCache = ehCacheManager.createCache(GROUPS_CACHE_NAME, createCacheConfig(String.class, Set.class, config));
+		userCache = ehCacheManager.createCache(USERS_CACHE_NAME, createCacheConfig(String.class, User.class, config));
 
-    @Override
-    public User getUser(String userid) throws RestException {
-        String key = "user" + userid;
-        User elem = userCache.get(key);
-        if (elem != null) {
-            LOG.debug("getUser({}) from cache", userid);
-            return elem;
-        }
+		// for auth cache, we use idle time instead of live time
+		authCache = ehCacheManager.createCache(AUTH_CACHE_NAME,
+				CacheConfigurationBuilder
+						.newCacheConfigurationBuilder(String.class, String.class, ResourcePoolsBuilder.heap(DEFAULT_CACHE_HEAP_SIZE))
+						.withExpiry(Expirations.timeToIdleExpiration(Duration.of(5, TimeUnit.MINUTES))).build());
+	}
 
-        User user = super.getUser(userid);
-        userCache.put(key, user);
-        return user;
-    }
+	@Override
+	protected void finalize() throws Throwable {
+		ehCacheManager.close();
+		super.finalize();
+	}
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public Set<Role> getAllGroups() throws RestException {
-        String key = "allgroups";
-        Set<Role> elem = groupsCache.get(key);
-        if (elem != null) {
-            LOG.debug("getAllGroups from cache");
-            return elem;
-        }
+	@Override
+	public Set<String> getNestedGroups(String username) throws RestException {
+		@SuppressWarnings("unchecked")
+		Set<String> elem = groupsCache.get(username);
+		if (elem != null) {
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("getNestedGroups({}) from cache", username);
+			}
+			return elem;
+		}
 
-        Set<Role> groups = super.getAllGroups();
-        groupsCache.put(key, groups);
-        return groups;
-    }
+		Set<String> groups = super.getNestedGroups(username);
+		groupsCache.put(username, groups);
+		return groups;
+	}
 
-    private <K, V> CacheConfigurationBuilder<K, V> createCacheConfig(Class<K> keyClass, Class<V> valueClass, CrowdPluginConfiguration config) {
-        return CacheConfigurationBuilder.newCacheConfigurationBuilder(keyClass, valueClass, ResourcePoolsBuilder
-                .heap(100))
-                .withExpiry(new Expiry<K, V>() {
-                    @Override
-                    public Duration getExpiryForCreation(K key, V value) {
-                        return Duration.of(config.getCacheTTL(), TimeUnit.SECONDS);
-                    }
+	@Override
+	public User getUser(String username) throws RestException {
+		if (username.equals("null")) {
+			// NX is using username null as guest access or something...
+			throw new RestException("user null does not exist in Crowd");
+		}
+		
+		User elem = userCache.get(username);
+		if (elem != null) {
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("getUser({}) from cache", username);
+			}
+			return elem;
+		}
 
-                    @Override
-                    public Duration getExpiryForAccess(K key, ValueSupplier<? extends V> value) {
-                        return null;  // Keeping the existing expiry
-                    }
+		User user = super.getUser(username);
+		userCache.put(username, user);
+		return user;
+	}
 
-                    @Override
-                    public Duration getExpiryForUpdate(K key, ValueSupplier<? extends V> oldValue, V newValue) {
-                        return null;  // Keeping the existing expiry
-                    }
-                });
-    }
+	@Override
+	public Set<Role> getAllGroups() throws RestException {
+		@SuppressWarnings("unchecked")
+		Set<Role> elem = groupsCache.get(KEY_ALL_GROUPS);
+		if (elem != null) {
+			LOG.debug("getAllGroups from cache");
+			return elem;
+		}
+
+		Set<Role> groups = super.getAllGroups();
+		groupsCache.put(KEY_ALL_GROUPS, groups);
+		return groups;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void authenticate(String username, String password) throws RestException {
+		String cachedPasswordHash = authCache.get(username);
+		String passwordHash = DigestUtils.sha512Hex(password);
+		if (passwordHash.equals(cachedPasswordHash)) {
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("user {} password compared with cached hash successfully", username);
+			}
+			return;
+		}
+
+		super.authenticate(username, password);
+		authCache.put(username, passwordHash);
+	}
+
+	private static <K, V> CacheConfigurationBuilder<K, V> createCacheConfig(Class<K> keyClass, Class<V> valueClass,
+			CrowdPluginConfiguration config) {
+		return CacheConfigurationBuilder
+				.newCacheConfigurationBuilder(keyClass, valueClass, ResourcePoolsBuilder.heap(DEFAULT_CACHE_HEAP_SIZE))
+				.withExpiry(Expirations.timeToLiveExpiration(Duration.of(config.getCacheTTL(), TimeUnit.SECONDS)));
+	}
 }

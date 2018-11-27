@@ -11,7 +11,7 @@
 
     <groupId>com.roumanoff.nexus</groupId>
     <artifactId>nexus-crowd-plugin</artifactId>
-    <version>3.6.2</version>
+    <version>3.6.2.1</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <packaging>bundle</packaging>
 
@@ -70,6 +70,13 @@
             <artifactId>commons-lang3</artifactId>
             <scope>compile</scope>
             <version>3.5</version>
+        </dependency>
+        
+        <dependency>
+        	<groupId>commons-codec</groupId>
+        	<artifactId>commons-codec</artifactId>
+        	<scope>compile</scope>
+        	<version>1.11</version>
         </dependency>
 
     </dependencies>

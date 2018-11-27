@@ -35,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.plugins.crowd.client.rest.RestClient;
 import org.sonatype.nexus.plugins.crowd.client.rest.RestException;
-import org.sonatype.nexus.plugins.crowd.config.CrowdPluginConfiguration;
 
 @Singleton
 @Named
@@ -48,7 +47,7 @@ public class CrowdAuthenticatingRealm extends AuthorizingRealm {
     private RestClient restClient;
 
     @Inject
-    public CrowdAuthenticatingRealm(RestClient rc, CrowdPluginConfiguration configuration) {
+    public CrowdAuthenticatingRealm(RestClient rc) {
         restClient = Objects.requireNonNull(rc);
 
         LOG.info("CrowdAuthenticatingRealm is starting...");

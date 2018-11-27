@@ -71,6 +71,7 @@ import org.sonatype.nexus.security.user.UserStatus;
  */
 public class RestClient {
     private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
+    private static final String UTF8 = "UTF-8";
 
     private HttpClient client;
     private Credentials crowdCreds;
@@ -165,7 +166,7 @@ public class RestClient {
             post.setEntity(EntityBuilder.create()
                     .setText(writer.toString())
                     .setContentType(ContentType.APPLICATION_XML)
-                    .setContentEncoding("UTF-8")
+                    .setContentEncoding(UTF8)
                     .build());
 
             enablePreemptiveAuth(post, hc);
@@ -456,9 +457,9 @@ public class RestClient {
         return results;
     }
 
-    private String urlEncode(String str) {
+    private static String urlEncode(String str) {
         try {
-            return URLEncoder.encode(str, "UTF-8");
+            return URLEncoder.encode(str, UTF8);
         } catch (UnsupportedEncodingException uee) {
             LOG.error("UTF-8 not supported ?", uee);
             return str;
@@ -466,7 +467,7 @@ public class RestClient {
     }
 
 
-    private User convertUser(UserResponse in) {
+    private static User convertUser(UserResponse in) {
         User user = new User();
         user.setUserId(in.name);
         user.setFirstName(in.firstName);
@@ -476,9 +477,9 @@ public class RestClient {
         return user;
     }
 
-    private <T extends HttpRequestBase> T acceptXmlResponse(T method) {
+    private static <T extends HttpRequestBase> T acceptXmlResponse(T method) {
         method.addHeader("Accept", MediaType.APPLICATION_XML);
-        method.addHeader("Accept-Charset", "UTF-8");
+        method.addHeader("Accept-Charset", UTF8);
         return method;
     }
 
@@ -488,21 +489,21 @@ public class RestClient {
         return method;
     }
 
-    private <T> T unmarshal(HttpResponse response, Class<T> type) throws JAXBException, IOException {
+    private static <T> T unmarshal(HttpResponse response, Class<T> type) throws JAXBException, IOException {
         JAXBContext jaxbC = JAXBContext.newInstance(type);
         Unmarshaller um = jaxbC.createUnmarshaller();
         um.setEventHandler(new DefaultValidationEventHandler());
         return um.unmarshal(new StreamSource(response.getEntity().getContent()), type).getValue();
     }
 
-    private RestException createRestException(HttpResponse response) {
+    private static RestException createRestException(HttpResponse response) {
         StatusLine statusLine = response.getStatusLine();
         int status = statusLine.getStatusCode();
         String statusText = statusLine.getReasonPhrase();
         String body = null;
         if (response.getEntity() != null) {
             try {
-              body = EntityUtils.toString(response.getEntity(), "UTF-8");
+              body = EntityUtils.toString(response.getEntity(), UTF8);
             } catch (Exception e) {
               LOG.debug("Problem occured while reading a HTTP response", e);
             }
@@ -518,7 +519,7 @@ public class RestClient {
         return new RestException(strBuf.toString());
     }
 
-    private void handleError(Exception e) throws RestException {
+    private static void handleError(Exception e) throws RestException {
         LOG.error("Error occured while consuming Crowd REST service", e);
         throw new RestException(e.getMessage());
     }
