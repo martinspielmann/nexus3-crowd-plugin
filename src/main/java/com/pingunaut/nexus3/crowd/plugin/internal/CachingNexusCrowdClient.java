@@ -59,9 +59,9 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
         serverUri = URI.create(normalizeCrowdServerUri(props.getServerUrl()));
         host = new HttpHost(serverUri.getHost(), serverUri.getPort(), serverUri.getScheme());
         RequestConfig defaultRequestConfig = RequestConfig.custom()
-                .setConnectTimeout(15000)
-                .setSocketTimeout(15000)
-                .setConnectionRequestTimeout(15000)
+                .setConnectTimeout(props.getConnectTimeout())
+                .setSocketTimeout(props.getSocketTimeout())
+                .setConnectionRequestTimeout(props.getConnectionRequestTimeout())
                 .build();
         UsernamePasswordCredentials usernamePasswordCredentials = new UsernamePasswordCredentials(props.getApplicationName(), props.getApplicationPassword());
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();

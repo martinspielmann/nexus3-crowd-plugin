@@ -83,6 +83,11 @@ crowd.server.url=http://localhost:8095/crowd (replace by your crowd url)
 application.name=nexus (replace by your nexus application name configured in crowd)
 application.password=nexus (replace by your nexus application password configured in crowd)
 cache.authentication=false (should authentication be cached? default is false)
+
+# optional:
+timeout.connect=15000 (default is 15000)
+timeout.socket=15000 (default is 15000)
+timeout.connectionrequest=15000 (default is 15000)
 ```
   
 ## Usage
