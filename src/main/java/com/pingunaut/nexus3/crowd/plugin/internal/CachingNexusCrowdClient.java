@@ -12,6 +12,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -89,6 +90,15 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
         }
     }
 
+    protected CloseableHttpResponse executeQuery(final HttpUriRequest request) {
+        try {
+            return getClient().execute(host, request);
+        } catch (IOException e) {
+            LOGGER.error("error executing query", e);
+            return null;
+        }
+    }
+
     private HttpGet httpGet(String query) {
         HttpGet g = new HttpGet(query);
         addDefaultHeaders(g);
@@ -160,7 +170,9 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
         }
         String restUri = restUri(String.format("user/group/nested?username=%s", username));
         LOGGER.debug("getting groups from " + restUri);
-        return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings);
+        CloseableHttpResponse response = executeQuery(httpGet(restUri));
+        return CrowdMapper.toRoleStrings(response);
+        //return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings);
     }
 
     @Override
