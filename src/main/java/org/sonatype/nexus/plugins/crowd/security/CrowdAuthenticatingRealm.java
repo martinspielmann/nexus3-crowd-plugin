@@ -37,7 +37,7 @@ import org.sonatype.nexus.plugins.crowd.client.rest.RestClient;
 import org.sonatype.nexus.plugins.crowd.client.rest.RestException;
 
 @Singleton
-@Named
+@Named(CrowdAuthenticatingRealm.NAME)
 @Description("OSS Crowd Authentication Realm")
 public class CrowdAuthenticatingRealm extends AuthorizingRealm {
     private static final Logger LOG = LoggerFactory.getLogger(CrowdAuthenticatingRealm.class);
@@ -49,6 +49,7 @@ public class CrowdAuthenticatingRealm extends AuthorizingRealm {
     @Inject
     public CrowdAuthenticatingRealm(RestClient rc) {
         restClient = Objects.requireNonNull(rc);
+        setName(NAME);
 
         LOG.info("CrowdAuthenticatingRealm is starting...");
     }
