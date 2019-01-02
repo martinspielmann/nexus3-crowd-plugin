@@ -32,7 +32,7 @@ USER root
 RUN yum install -y curl
 
 # Download crowd plugin
-RUN curl https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.5.0/nexus3-crowd-plugin-3.5.0.jar --output /opt/sonatype/nexus/system/nexus3-crowd-plugin.jar
+RUN curl -L https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.5.0/nexus3-crowd-plugin-3.5.0.jar --output /opt/sonatype/nexus/system/nexus3-crowd-plugin.jar
 
 # Install plugin
 RUN echo "reference\:file\:nexus3-crowd-plugin.jar = 200" >> /opt/sonatype/nexus/etc/karaf/startup.properties
