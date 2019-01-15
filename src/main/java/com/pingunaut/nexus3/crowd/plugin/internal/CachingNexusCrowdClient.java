@@ -115,7 +115,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
         }
 
         // if authentication with cached value fails or is skipped, crowd and check auth
-        String authRequest = CrowdMapper.toPasswordJsonString( token.getPassword());
+        String authRequest = CrowdMapper.toPasswordJsonString(token.getPassword());
         String authResponse = executeQuery(httpPost(restUri("authentication?username=" + token.getUsername()), new StringEntity(authRequest, ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
 
         if (StringUtils.hasText(authResponse)) {
@@ -158,19 +158,19 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
             LOGGER.debug("return groups from cache");
             return cachedGroups.get();
         }
-        String restUri = restUri(String.format("user/group/nested?username=%s", username));
+        String restUri = restUri(String.format("user/group/nested?username=%s", encodeUrlParameter(username)));
         LOGGER.debug("getting groups from " + restUri);
         return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings);
     }
 
     @Override
     public User findUserByUsername(String username) {
-        return executeQuery(httpGet(restUri(String.format("user?username=%s", username))), CrowdMapper::toUser);
+        return executeQuery(httpGet(restUri(String.format("user?username=%s", encodeUrlParameter(username)))), CrowdMapper::toUser);
     }
 
     @Override
     public Role findRoleByRoleId(String roleId) {
-        return executeQuery(httpGet(restUri(String.format("group?groupname=%s", roleId))), CrowdMapper::toRole);
+        return executeQuery(httpGet(restUri(String.format("group?groupname=%s", encodeUrlParameter(roleId)))), CrowdMapper::toRole);
     }
 
     @Override
@@ -197,12 +197,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
         if (!Strings.isNullOrEmpty(criteria.getEmail())) {
             query.append(" AND email=\"").append(criteria.getEmail()).append("*\"");
         }
-        try {
-            return URLEncoder.encode(query.toString(), StandardCharsets.UTF_8.toString());
-        } catch (UnsupportedEncodingException e) {
-            LOGGER.error("ouch... your platform does not support utf-8?", e);
-            return "";
-        }
+        return encodeUrlParameter(query.toString());
     }
 
     @Override
@@ -224,5 +219,14 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
     protected CacheProvider getCache() {
         return cache;
+    }
+
+    protected String encodeUrlParameter(String string) {
+        try {
+            return URLEncoder.encode(string, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.error("ouch... your platform does not support utf-8?", e);
+            return "";
+        }
     }
 }
