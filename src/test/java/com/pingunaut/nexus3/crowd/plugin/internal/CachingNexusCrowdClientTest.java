@@ -1,35 +1,21 @@
 package com.pingunaut.nexus3.crowd.plugin.internal;
 
-import com.google.inject.Inject;
-import com.pingunaut.nexus3.crowd.plugin.CrowdAuthenticatingRealm;
 import com.pingunaut.nexus3.crowd.plugin.internal.entity.CachedToken;
-import com.pingunaut.nexus3.crowd.plugin.internal.entity.mapper.CrowdMapper;
-import org.apache.http.*;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.CredentialsProvider;
+import org.apache.http.HttpHost;
 import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicHttpResponse;
-import org.apache.http.message.BasicStatusLine;
-import org.apache.http.protocol.HttpContext;
 import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.util.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.sonatype.nexus.security.role.Role;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.spi.CharsetProvider;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
@@ -215,5 +201,39 @@ public class CachingNexusCrowdClientTest {
         when(props.getApplicationPassword()).thenReturn("passw");
         CachingNexusCrowdClient client = new CachingNexusCrowdClient(props, cache);
         Assert.assertEquals("http://foobar/rest/usermanagement/1/blub", client.restUri("blub"));
+    }
+
+    @Test
+    public void testRoles() throws Exception {
+        CrowdProperties props = mock(CrowdProperties.class);
+        CacheProvider cache = mock(CacheProvider.class);
+        when(props.isCacheAuthenticationEnabled()).thenReturn(Boolean.TRUE);
+        when(props.getServerUrl()).thenReturn("http://foobar/");
+        when(props.getApplicationName()).thenReturn("app");
+        when(props.getApplicationPassword()).thenReturn("passw");
+        CloseableHttpClient clientMock = Mockito.mock(CloseableHttpClient.class);
+        ArgumentCaptor<HttpUriRequest> captor = ArgumentCaptor.forClass(HttpUriRequest.class);
+        when(clientMock.execute(any(HttpHost.class), captor.capture(), any(ResponseHandler.class))).thenReturn(
+                IntStream.range(0, 1000).mapToObj(this::createRole).collect(Collectors.toSet()),
+                IntStream.range(1000, 1500).mapToObj(this::createRole).collect(Collectors.toSet())
+        );
+        CachingNexusCrowdClient client = new CachingNexusCrowdClient(props, cache) {
+            @Override
+            protected CloseableHttpClient getClient() {
+                return clientMock;
+            }
+        };
+        Set<Role> roles = client.findRoles();
+
+        Assert.assertEquals(1500, roles.size());
+        Assert.assertTrue(captor.getAllValues().get(0).getURI().getQuery().contains("start-index=0"));
+        Assert.assertTrue(captor.getAllValues().get(1).getURI().getQuery().contains("start-index=1000"));
+    }
+
+    private Role createRole(int index) {
+        Role role = new Role();
+        role.setName("administrators" + index);
+        role.setDescription("Global administrator group");
+        return role;
     }
 }

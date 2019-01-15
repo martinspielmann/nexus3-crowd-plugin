@@ -36,6 +36,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -219,7 +220,18 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
     @Override
     public Set<Role> findRoles() {
-        return executeQuery(httpGet(restUri("search?entity-type=group&expand=group")), CrowdMapper::toRoles);
+        Set<Role> roles = new HashSet<>();
+        Set<Role> rolesPaginated;
+        int startIndex = 0;
+        int maxResults = 1000;
+        do {
+            rolesPaginated = executeQuery(httpGet(restUri(String.format("search?entity-type=group&expand=group&start-index=%s&max-results=%s", startIndex, maxResults))), CrowdMapper::toRoles);
+            startIndex += maxResults;
+            if (rolesPaginated != null) {
+                roles.addAll(rolesPaginated);
+            }
+        } while (rolesPaginated != null && rolesPaginated.size() == maxResults);
+        return roles;
     }
 
     protected String restUri(String path) {
