@@ -193,7 +193,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
     @Override
     public Set<User> findUsers() {
-        return executeQuery(httpGet(restUri("search?entity-type=user&expand=user")), CrowdMapper::toUsers);
+        return findPaginated("search?entity-type=user&expand=user", CrowdMapper::toUsers);
     }
 
     @Override
@@ -220,18 +220,23 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
     @Override
     public Set<Role> findRoles() {
-        Set<Role> roles = new HashSet<>();
-        Set<Role> rolesPaginated;
+        return findPaginated("search?entity-type=group&expand=group", CrowdMapper::toRoles);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T> Set<T> findPaginated(final String url, ResponseHandler<Set<? extends T>> responseHandler) {
+        Set<T> results = new HashSet<>();
+        Set<T> resultsPaginated;
         int startIndex = 0;
         int maxResults = 1000;
         do {
-            rolesPaginated = executeQuery(httpGet(restUri(String.format("search?entity-type=group&expand=group&start-index=%s&max-results=%s", startIndex, maxResults))), CrowdMapper::toRoles);
+            resultsPaginated = (Set<T>) executeQuery(httpGet(restUri(String.format("%s&start-index=%s&max-results=%s", url, startIndex, maxResults))), responseHandler);
             startIndex += maxResults;
-            if (rolesPaginated != null) {
-                roles.addAll(rolesPaginated);
+            if (resultsPaginated != null) {
+                results.addAll(resultsPaginated);
             }
-        } while (rolesPaginated != null && rolesPaginated.size() == maxResults);
-        return roles;
+        } while (resultsPaginated != null && resultsPaginated.size() == maxResults);
+        return results;
     }
 
     protected String restUri(String path) {
