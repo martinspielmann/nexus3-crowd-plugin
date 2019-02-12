@@ -36,6 +36,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -192,7 +193,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
     @Override
     public Set<User> findUsers() {
-        return executeQuery(httpGet(restUri("search?entity-type=user&expand=user")), CrowdMapper::toUsers);
+        return findPaginated("search?entity-type=user&expand=user", CrowdMapper::toUsers);
     }
 
     @Override
@@ -219,7 +220,23 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
     @Override
     public Set<Role> findRoles() {
-        return executeQuery(httpGet(restUri("search?entity-type=group&expand=group")), CrowdMapper::toRoles);
+        return findPaginated("search?entity-type=group&expand=group", CrowdMapper::toRoles);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T> Set<T> findPaginated(final String url, ResponseHandler<Set<? extends T>> responseHandler) {
+        Set<T> results = new HashSet<>();
+        Set<T> resultsPaginated;
+        int startIndex = 0;
+        int maxResults = 1000;
+        do {
+            resultsPaginated = (Set<T>) executeQuery(httpGet(restUri(String.format("%s&start-index=%s&max-results=%s", url, startIndex, maxResults))), responseHandler);
+            startIndex += maxResults;
+            if (resultsPaginated != null) {
+                results.addAll(resultsPaginated);
+            }
+        } while (resultsPaginated != null && resultsPaginated.size() == maxResults);
+        return results;
     }
 
     protected String restUri(String path) {
