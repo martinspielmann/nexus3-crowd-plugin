@@ -12,6 +12,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -35,6 +36,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,9 +61,9 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
         serverUri = URI.create(normalizeCrowdServerUri(props.getServerUrl()));
         host = new HttpHost(serverUri.getHost(), serverUri.getPort(), serverUri.getScheme());
         RequestConfig defaultRequestConfig = RequestConfig.custom()
-                .setConnectTimeout(15000)
-                .setSocketTimeout(15000)
-                .setConnectionRequestTimeout(15000)
+                .setConnectTimeout(props.getConnectTimeout())
+                .setSocketTimeout(props.getSocketTimeout())
+                .setConnectionRequestTimeout(props.getConnectionRequestTimeout())
                 .build();
         UsernamePasswordCredentials usernamePasswordCredentials = new UsernamePasswordCredentials(props.getApplicationName(), props.getApplicationPassword());
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -83,6 +85,15 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
     protected <T> T executeQuery(final HttpUriRequest request, final ResponseHandler<? extends T> responseHandler) {
         try {
             return getClient().execute(host, request, responseHandler);
+        } catch (IOException e) {
+            LOGGER.error("error executing query", e);
+            return null;
+        }
+    }
+
+    protected CloseableHttpResponse executeQuery(final HttpUriRequest request) {
+        try {
+            return getClient().execute(host, request);
         } catch (IOException e) {
             LOGGER.error("error executing query", e);
             return null;
@@ -160,7 +171,9 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
         }
         String restUri = restUri(String.format("user/group/nested?username=%s", encodeUrlParameter(username)));
         LOGGER.debug("getting groups from " + restUri);
-        return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings);
+        CloseableHttpResponse response = executeQuery(httpGet(restUri));
+        return CrowdMapper.toRoleStrings(response);
+        //return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings);
     }
 
     @Override
@@ -180,7 +193,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
     @Override
     public Set<User> findUsers() {
-        return executeQuery(httpGet(restUri("search?entity-type=user&expand=user")), CrowdMapper::toUsers);
+        return findPaginated("search?entity-type=user&expand=user", CrowdMapper::toUsers);
     }
 
     @Override
@@ -202,7 +215,23 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
     @Override
     public Set<Role> findRoles() {
-        return executeQuery(httpGet(restUri("search?entity-type=group&expand=group")), CrowdMapper::toRoles);
+        return findPaginated("search?entity-type=group&expand=group", CrowdMapper::toRoles);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T> Set<T> findPaginated(final String url, ResponseHandler<Set<? extends T>> responseHandler) {
+        Set<T> results = new HashSet<>();
+        Set<T> resultsPaginated;
+        int startIndex = 0;
+        int maxResults = 1000;
+        do {
+            resultsPaginated = (Set<T>) executeQuery(httpGet(restUri(String.format("%s&start-index=%s&max-results=%s", url, startIndex, maxResults))), responseHandler);
+            startIndex += maxResults;
+            if (resultsPaginated != null) {
+                results.addAll(resultsPaginated);
+            }
+        } while (resultsPaginated != null && resultsPaginated.size() == maxResults);
+        return results;
     }
 
     protected String restUri(String path) {
