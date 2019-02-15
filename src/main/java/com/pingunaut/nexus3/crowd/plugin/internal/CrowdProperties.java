@@ -79,6 +79,6 @@ public class CrowdProperties {
     }
 
     private static int parseWithDefault(String s, int defaultValue) {
-        return s.matches("-?\\d+") ? Integer.parseInt(s) : defaultValue;
+        return s != null && s.matches("-?\\d+") ? Integer.parseInt(s) : defaultValue;
     }
 }
