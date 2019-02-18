@@ -31,15 +31,17 @@ public class CrowdProperties {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CrowdProperties.class);
 
+    private static final int DEFAULT_TIMEOUT = 15000;
+
     private Properties configuration;
 
     public CrowdProperties() {
         configuration = new Properties();
         try {
-            Path p = Paths.get(System.getProperty("karaf.data"),  "etc", CONFIG_FILE);
-            if(!Files.exists(p)){
+            Path p = Paths.get(System.getProperty("karaf.data"), "etc", CONFIG_FILE);
+            if (!Files.exists(p)) {
                 LOGGER.warn("DEPRECATION: Please place your crowd.properties  in the $data-dir/etc/ to be able to update without copy manual copy steps");
-                p = Paths.get(".","etc", CONFIG_FILE);
+                p = Paths.get(".", "etc", CONFIG_FILE);
             }
             configuration.load(Files.newInputStream(p));
         } catch (IOException e) {
@@ -59,8 +61,24 @@ public class CrowdProperties {
         return configuration.getProperty("application.password");
     }
 
+    public int getConnectTimeout() {
+        return parseWithDefault(configuration.getProperty("timeout.connect"), DEFAULT_TIMEOUT);
+    }
+
+    public int getSocketTimeout() {
+        return parseWithDefault(configuration.getProperty("timeout.socket"), DEFAULT_TIMEOUT);
+    }
+
+    public int getConnectionRequestTimeout() {
+        return parseWithDefault(configuration.getProperty("timeout.connectionrequest"), DEFAULT_TIMEOUT);
+    }
+
     public boolean isCacheAuthenticationEnabled() {
         String enabled = configuration.getProperty("cache.authentication");
         return Boolean.valueOf(enabled);
+    }
+
+    private static int parseWithDefault(String s, int defaultValue) {
+        return s != null && s.matches("-?\\d+") ? Integer.parseInt(s) : defaultValue;
     }
 }
