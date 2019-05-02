@@ -32,14 +32,14 @@ USER root
 RUN yum install -y curl
 
 # Download crowd plugin
-RUN curl -L https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.7.0/nexus3-crowd-plugin-3.7.0.jar --output /opt/sonatype/nexus/system/nexus3-crowd-plugin.jar
+RUN curl -L https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.7.1/nexus3-crowd-plugin-3.7.1.jar --output /opt/sonatype/nexus/system/nexus3-crowd-plugin.jar
 
 # Install plugin
 RUN echo "reference\:file\:nexus3-crowd-plugin.jar = 200" >> /opt/sonatype/nexus/etc/karaf/startup.properties
 
 # Add Crowd Config
 RUN touch /opt/sonatype/nexus/etc/crowd.properties
-RUN echo "crowd.server.url=jira.example.com" >> /opt/sonatype/nexus/etc/crowd.properties
+RUN echo "crowd.server.url=https://jira.example.com" >> /opt/sonatype/nexus/etc/crowd.properties
 RUN echo "application.name=nexus" >> /opt/sonatype/nexus/etc/crowd.properties
 RUN echo "application.password=nexus" >> /opt/sonatype/nexus/etc/crowd.properties
 RUN echo "cache.authentication=false" >> /opt/sonatype/nexus/etc/crowd.properties
@@ -66,13 +66,13 @@ docker run --rm -ti test
 Releases can be found here: https://github.com/pingunaut/nexus3-crowd-plugin/releases
 ```
 cd $install-dir/system/
-wget https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.7.0/nexus3-crowd-plugin-3.7.0.jar
+wget https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.7.1/nexus3-crowd-plugin-3.7.1.jar
 ```
 
 #### 2. Add bundle to startup properties
 Append the following line to *startup.properties* file found in **$install-dir**/etc/karaf
 ```
-reference\:file\:nexus3-crowd-plugin-3.7.0.jar = 200
+reference\:file\:nexus3-crowd-plugin-3.7.1.jar = 200
 ```
 
 #### 3. Create crowd.properties
