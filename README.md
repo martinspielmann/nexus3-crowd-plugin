@@ -39,7 +39,7 @@ RUN echo "reference\:file\:nexus3-crowd-plugin.jar = 200" >> /opt/sonatype/nexus
 
 # Add Crowd Config
 RUN touch /opt/sonatype/nexus/etc/crowd.properties
-RUN echo "crowd.server.url=jira.example.com" >> /opt/sonatype/nexus/etc/crowd.properties
+RUN echo "crowd.server.url=https://jira.example.com" >> /opt/sonatype/nexus/etc/crowd.properties
 RUN echo "application.name=nexus" >> /opt/sonatype/nexus/etc/crowd.properties
 RUN echo "application.password=nexus" >> /opt/sonatype/nexus/etc/crowd.properties
 RUN echo "cache.authentication=false" >> /opt/sonatype/nexus/etc/crowd.properties
