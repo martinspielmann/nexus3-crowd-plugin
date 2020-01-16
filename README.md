@@ -3,9 +3,9 @@ This plugin adds a Crowd realm to Sonatype Nexus OSS and enables you to authenti
 
 It works with Nexus 3.x and Crowd 2.x and 3.x
 
-[![Jenkins](https://img.shields.io/jenkins/s/https/ci.martinspielmann.de/job/pingunaut/job/nexus3-crowd-plugin/job/master.svg)](https://ci.martinspielmann.de/job/pingunaut/job/nexus3-crowd-plugin/job/master/)
-[![License](https://img.shields.io/badge/license-Apache%20License%202.0-green.svg)](https://github.com/pingunaut/nexus3-crowd-plugin/blob/master/LICENSE)
-[![SonarQube Coverage](https://img.shields.io/sonar/https/sonarcloud.io/nexus3-crowd-plugin/coverage.svg)](https://sonarcloud.io/component_measures?id=nexus3-crowd-plugin&metric=coverage)
+[![Build Status](https://travis-ci.org/EarlPomeroy/nexus3-jira-embedded-crowd-plugin.svg?branch=master)](https://travis-ci.org/EarlPomeroy/nexus3-jira-embedded-crowd-plugin)
+[![License](https://img.shields.io/badge/license-Apache%20License%202.0-green.svg)](https://github.com/EarlPomeroy/nexus3-jira-embedded-crowd-plugin/blob/master/LICENSE)
+[![Code Coverage](https://codecov.io/github/EarlPomeroy/nexus3-jira-embedded-crowd-plugin.svg)](https://codecov.io/gh/EarlPomeroy/nexus3-jira-embedded-crowd-plugin)
 
 
 ##### Directory naming convention:
@@ -144,8 +144,3 @@ karaf@root()>
   ```
   bundle:install -s file://ABSOLUTE_PATH_TO_YOUR_JAR
   ```
-
-## Contributing
-[![GitHub contributors](https://img.shields.io/github/contributors/pingunaut/nexus3-crowd-plugin.svg)](https://github.com/pingunaut/nexus3-crowd-plugin/graphs/contributors)
-
-Thanks to all contributors who helped to get this up and running
