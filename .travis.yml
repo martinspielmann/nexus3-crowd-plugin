@@ -4,7 +4,7 @@ jdk:
   - openjdk11
 
 install: true
-script: ./mvnw clean install
+script: mvn clean install
 
 cache:
   directories:
