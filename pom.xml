@@ -9,8 +9,8 @@
         <version>3.16.1-02</version>
     </parent>
 
-    <groupId>com.pingunaut.nexus</groupId>
-    <artifactId>nexus3-crowd-plugin</artifactId>
+    <groupId>com.epomeroy.jira.crowd.nexus3</groupId>
+    <artifactId>nexus3-jira-crowd-plugin</artifactId>
     <version>3.7.2-SNAPSHOT</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -132,6 +132,16 @@
                             httpclient;scope=compile
                         </Embed-Dependency>
                     </instructions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
                 </configuration>
             </plugin>
         </plugins>

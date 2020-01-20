@@ -13,6 +13,7 @@
 package com.epomeroy.jira.crowd.nexus3.plugin.internal;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,32 +55,72 @@ public class CrowdProperties {
         return s != null && s.matches("-?\\d+") ? Integer.parseInt(s) : defaultValue;
     }
 
+    private String readFile(String filePath) {
+        if (filePath == null) {
+            return null;
+        }
+
+        try {
+            return new String(Files.readAllBytes(Paths.get(filePath)),
+                    StandardCharsets.UTF_8).trim();
+        } catch (IOException e) {
+            LOGGER.error("Could not read Application Password from environment", e);
+        }
+
+        return null;
+    }
+
     public String getServerUrl() {
-        return configuration.getProperty("crowd.server.url");
+        // Read a docker env setting and try to use it, otherwise fall back to config file
+        String serverUrl = System.getenv("SERVER_URL");
+        return serverUrl != null ? serverUrl : configuration.getProperty("crowd.server.url");
     }
 
     public String getApplicationName() {
-        return configuration.getProperty("application.name");
+        // Read a docker env setting and try to use it, otherwise fall back to config file
+        String applicationName = System.getenv("APPLICATION_USERNAME");
+        return applicationName != null ? applicationName : configuration.getProperty("application.name");
     }
 
     public String getApplicationPassword() {
-        return configuration.getProperty("application.password");
+        // Read a docker env setting and try to use it, otherwise fall back to config file
+        // Docker secrets are files in the /run/secrets folder and are passed as the full filename
+        String applicationPassword = readFile(System.getenv("APPLICATION_PASSWORD"));
+        return applicationPassword != null ? applicationPassword : configuration.getProperty("application.password");
+    }
+
+    public String getJiraUserGroup() {
+        // Read a docker env setting and try to use it, otherwise fall back to config file
+        // Docker secrets are files in the /run/secrets folder and are passed as the full filename
+        String jiraUserGroup = readFile(System.getenv("JIRA_USER_GROUP"));
+        return jiraUserGroup != null ? jiraUserGroup : configuration.getProperty("jira.user.group");
     }
 
     public int getConnectTimeout() {
-        return parseWithDefault(configuration.getProperty("timeout.connect"), DEFAULT_TIMEOUT);
+        // Read a docker env setting and try to use it, otherwise fall back to config file
+        String connectionTimeout = System.getenv("CONNECTION_TIMEOUT");
+        return connectionTimeout != null ? Integer.parseInt(connectionTimeout) : parseWithDefault(configuration.getProperty("timeout.connect"), DEFAULT_TIMEOUT);
     }
 
     public int getSocketTimeout() {
-        return parseWithDefault(configuration.getProperty("timeout.socket"), DEFAULT_TIMEOUT);
+        // Read a docker env setting and try to use it, otherwise fall back to config file
+        String socketTimeout = System.getenv("SOCKET_TIMEOUT");
+        return socketTimeout != null ? Integer.parseInt(socketTimeout) : parseWithDefault(configuration.getProperty("timeout.socket"), DEFAULT_TIMEOUT);
     }
 
     public int getConnectionRequestTimeout() {
-        return parseWithDefault(configuration.getProperty("timeout.connectionrequest"), DEFAULT_TIMEOUT);
+        // Read a docker env setting and try to use it, otherwise fall back to config file
+        String connectionRequestTimeout = System.getenv("CONNECTION_REQUEST_TIMEOUT");
+        return connectionRequestTimeout != null ? Integer.parseInt(connectionRequestTimeout) : parseWithDefault(configuration.getProperty("timeout.connectionrequest"), DEFAULT_TIMEOUT);
     }
 
     public boolean isCacheAuthenticationEnabled() {
         String enabled = configuration.getProperty("cache.authentication");
         return Boolean.valueOf(enabled);
+    }
+
+    public byte[] getBasicAuthorization() {
+        StringBuilder sb = new StringBuilder();
+        return sb.append(getApplicationName()).append(":").append(getApplicationPassword()).toString().getBytes(StandardCharsets.UTF_8);
     }
 }

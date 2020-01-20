@@ -5,14 +5,13 @@ import java.util.List;
 
 public class CrowdUsersResult {
 
-    private List<CrowdUserResult> users = new ArrayList<>();
+    private List<CrowdUserResult> values = new ArrayList<>();
 
-    public List<CrowdUserResult> getUsers() {
-        return users;
+    public List<CrowdUserResult> getValues() {
+        return values;
     }
 
-    public void setUsers(List<CrowdUserResult> users) {
-        this.users = users;
+    public void setValues(List<CrowdUserResult> values) {
+        this.values = values;
     }
-
 }

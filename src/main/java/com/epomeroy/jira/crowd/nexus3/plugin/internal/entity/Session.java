@@ -1,8 +1,8 @@
 package com.epomeroy.jira.crowd.nexus3.plugin.internal.entity;
 
-public class CrowdGroupResult {
-
+public class Session {
     private String name;
+    private String value;
 
     public String getName() {
         return name;
@@ -10,5 +10,13 @@ public class CrowdGroupResult {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
     }
 }

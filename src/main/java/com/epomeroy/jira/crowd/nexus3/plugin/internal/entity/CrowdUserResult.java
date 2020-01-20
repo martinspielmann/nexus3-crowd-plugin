@@ -1,20 +1,21 @@
 package com.epomeroy.jira.crowd.nexus3.plugin.internal.entity;
 
-import com.google.gson.annotations.SerializedName;
-
 public class CrowdUserResult {
 
     private String name;
-
-    @SerializedName("first-name")
-    private String firstName;
-
-    @SerializedName("last-name")
-    private String lastName;
-
+    private String emailAddress;
+    private String displayName;
     private boolean active;
+    private String timeZone;
+    private CrowdGroupsResult groups;
 
-    private String email;
+    public CrowdGroupsResult getGroups() {
+        return groups;
+    }
+
+    public void setGroups(CrowdGroupsResult groups) {
+        this.groups = groups;
+    }
 
     public String getName() {
         return name;
@@ -24,20 +25,20 @@ public class CrowdUserResult {
         this.name = name;
     }
 
-    public String getFirstName() {
-        return firstName;
+    public String getEmail() {
+        return emailAddress;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
+    public void setEmail(String emailAddress) {
+        this.emailAddress = emailAddress;
     }
 
-    public String getLastName() {
-        return lastName;
+    public String getDisplayName() {
+        return displayName;
     }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public boolean isActive() {
@@ -48,12 +49,19 @@ public class CrowdUserResult {
         this.active = active;
     }
 
-    public String getEmail() {
-        return email;
+    public String getTimeZone() {
+        return timeZone;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setTimeZone(String timeZone) {
+        this.timeZone = timeZone;
     }
 
+    public String getFirstName() {
+        return getDisplayName().split(" ")[0];
+    }
+
+    public String getLastName() {
+        return getDisplayName().split(" ")[1];
+    }
 }

@@ -5,7 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,7 +39,6 @@ import org.sonatype.nexus.security.user.UserSearchCriteria;
 import com.epomeroy.jira.crowd.nexus3.plugin.NexusCrowdClient;
 import com.epomeroy.jira.crowd.nexus3.plugin.internal.entity.CachedToken;
 import com.epomeroy.jira.crowd.nexus3.plugin.internal.entity.mapper.CrowdMapper;
-import com.google.common.base.Strings;
 import com.google.inject.Inject;
 
 @Singleton
@@ -47,6 +46,7 @@ import com.google.inject.Inject;
 public class CachingNexusCrowdClient implements NexusCrowdClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CachingNexusCrowdClient.class);
+    private CrowdProperties props = null;
 
     private CloseableHttpClient client = null;
     private CacheProvider cache = null;
@@ -60,6 +60,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
     @Inject
     public CachingNexusCrowdClient(CrowdProperties props, CacheProvider cache) {
         this.cache = cache;
+        this.props = props;
         this.authCacheEnabled = props.isCacheAuthenticationEnabled();
         LOGGER.info("Authentication Cache enabled: " + authCacheEnabled);
         serverUri = URI.create(normalizeCrowdServerUri(props.getServerUrl()));
@@ -102,8 +103,9 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
     }
 
     private void addDefaultHeaders(HttpUriRequest g) {
-        g.addHeader("X-Atlassian-Token", "no-check");
+        g.addHeader("Content-Type", "application/json");
         g.addHeader("Accept", "application/json");
+        g.addHeader("Authorization", String.format("Basic %s", Base64.getEncoder().encodeToString(props.getBasicAuthorization())));
     }
 
     private HttpPost httpPost(String query, HttpEntity entity) {
@@ -121,8 +123,8 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
         }
 
         // if authentication with cached value fails or is skipped, crowd and check auth
-        String authRequest = CrowdMapper.toPasswordJsonString(token.getPassword());
-        String authResponse = executeQuery(httpPost(restUri("authentication?username=" + encodeUrlParameter(token.getUsername())), new StringEntity(authRequest, ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
+        String authRequest = CrowdMapper.toAuthenticationJsonString(token);
+        String authResponse = executeQuery(httpPost(buildRestUri("auth", "1", "session"), new StringEntity(authRequest, ContentType.APPLICATION_JSON)), CrowdMapper::toAuthToken);
 
         if (StringUtils.hasText(authResponse)) {
             // authentication was successful
@@ -164,19 +166,20 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
             LOGGER.debug("return groups from cache");
             return cachedGroups.get();
         }
-        String restUri = restUri(String.format("user/group/nested?username=%s", encodeUrlParameter(username)));
+
+        String restUri = buildRestUri("api", "2", String.format("user?username=%s", encodeUrlParameter(username)));
         LOGGER.debug("getting groups from " + restUri);
         return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings);
     }
 
     @Override
     public User findUserByUsername(String username) {
-        return executeQuery(httpGet(restUri(String.format("user?username=%s", encodeUrlParameter(username)))), CrowdMapper::toUser);
+        return executeQuery(httpGet(buildRestUri("api", "2", String.format("user?username=%s", encodeUrlParameter(username)))), CrowdMapper::toUser);
     }
 
     @Override
     public Role findRoleByRoleId(String roleId) {
-        return executeQuery(httpGet(restUri(String.format("group?groupname=%s", encodeUrlParameter(roleId)))), CrowdMapper::toRole);
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
@@ -185,50 +188,30 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
     }
 
     @Override
+    // TODO: 1/20/20 group member search only returns 50 users at a time. This call needs to query the server until all group members are returned
     public Set<User> findUsers() {
-        return findPaginated("search?entity-type=user&expand=user", CrowdMapper::toUsers);
+        return executeQuery(httpGet(buildRestUri("api", "2", String.format("group/member?groupname=%s", encodeUrlParameter(props.getJiraUserGroup())))), CrowdMapper::toUsers);
     }
 
     @Override
     public Set<User> findUserByCriteria(UserSearchCriteria criteria) {
-        String query = createQueryFromCriteria(criteria);
-        return executeQuery(httpGet(restUri(String.format("search?entity-type=user&expand=user&restriction=%s", query))), CrowdMapper::toUsers);
-    }
+        Set<User> users = findUsers();
 
-    private String createQueryFromCriteria(UserSearchCriteria criteria) {
-        StringBuilder query = new StringBuilder("active=true");
-        if (!Strings.isNullOrEmpty(criteria.getUserId())) {
-            query.append(" AND name=\"").append(criteria.getUserId()).append("*\"");
-        }
-        if (!Strings.isNullOrEmpty(criteria.getEmail())) {
-            query.append(" AND email=\"").append(criteria.getEmail()).append("*\"");
-        }
-        return encodeUrlParameter(query.toString());
+        return users.stream()
+                .filter(user -> user.getName().startsWith(criteria.getUserId())
+                                || user.getFirstName().startsWith(criteria.getUserId())
+                                || user.getLastName().startsWith(criteria.getUserId())
+                                || user.getEmailAddress().startsWith(criteria.getUserId()))
+                .collect(Collectors.toSet());
     }
 
     @Override
     public Set<Role> findRoles() {
-        return findPaginated("search?entity-type=group&expand=group", CrowdMapper::toRoles);
+        return CrowdMapper.toRoles(props.getJiraUserGroup());
     }
 
-    @SuppressWarnings("unchecked")
-    protected <T> Set<T> findPaginated(final String url, ResponseHandler<Set<? extends T>> responseHandler) {
-        Set<T> results = new HashSet<>();
-        Set<T> resultsPaginated;
-        int startIndex = 0;
-        int maxResults = 1000;
-        do {
-            resultsPaginated = (Set<T>) executeQuery(httpGet(restUri(String.format("%s&start-index=%s&max-results=%s", url, startIndex, maxResults))), responseHandler);
-            startIndex += maxResults;
-            if (resultsPaginated != null) {
-                results.addAll(resultsPaginated);
-            }
-        } while (resultsPaginated != null && resultsPaginated.size() == maxResults);
-        return results;
-    }
-
-    protected String restUri(String path) {
-        return String.format("%s/rest/usermanagement/1/%s", getServerUriString(), path);
+    protected String buildRestUri(String apiName, String apiVersion, String path) {
+        return String.format("%s/rest/%s/%s/%s", getServerUriString(), apiName, apiVersion, path);
     }
 
     protected String getServerUriString() {

@@ -15,16 +15,19 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.epomeroy.jira.crowd.nexus3.plugin.internal.CachingNexusCrowdClient;
+import com.epomeroy.jira.crowd.nexus3.plugin.internal.CrowdProperties;
 
 public class CrowdAuthenticatingRealmTest {
 
     private CrowdAuthenticatingRealm r;
     private CachingNexusCrowdClient mockedClient;
+    private CrowdProperties mockedProperties;
 
     @Before
     public void setupTest() {
         mockedClient = Mockito.mock(CachingNexusCrowdClient.class);
-        r = new CrowdAuthenticatingRealm(mockedClient);
+        mockedProperties = Mockito.mock(CrowdProperties.class);
+        r = new CrowdAuthenticatingRealm(mockedClient, mockedProperties);
     }
 
     @Test

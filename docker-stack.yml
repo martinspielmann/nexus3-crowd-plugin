@@ -1,0 +1,16 @@
+version: "3.5"
+services:
+  nexus:
+    image: nexus-test
+    volumes:
+      - ~/tmp/nexus-data:/nexus-data
+    environment:
+      APPLICATION_PASSWORD: /run/secrets/apppass
+    secrets:
+      - apppass
+    ports:
+      - 8081:8081
+
+secrets:
+  apppass:
+    external: true

@@ -2,13 +2,22 @@ package com.epomeroy.jira.crowd.nexus3.plugin.internal.entity;
 
 public class AuthenticationResult {
 
-    private String name;
-
-    public String getName() {
-        return name;
+    public Session getSession() {
+        return session;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setSession(Session session) {
+        this.session = session;
     }
+
+    public LoginInfo getLoginInfo() {
+        return loginInfo;
+    }
+
+    public void setLoginInfo(LoginInfo loginInfo) {
+        this.loginInfo = loginInfo;
+    }
+
+    private Session session;
+    private LoginInfo loginInfo;
 }

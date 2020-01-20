@@ -4,15 +4,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CrowdGroupsResult {
+    private int size;
+    private List<CrowdGroupResult> items = new ArrayList<>();
 
-    private List<CrowdGroupResult> groups = new ArrayList<>();
-
-    public List<CrowdGroupResult> getGroups() {
-        return groups;
+    public int getSize() {
+        return size;
     }
 
-    public void setGroups(List<CrowdGroupResult> groups) {
-        this.groups = groups;
+    public void setSize(int size) {
+        this.size = size;
     }
 
+    public List<CrowdGroupResult> getItems() {
+        return items;
+    }
+
+    public void setItems(List<CrowdGroupResult> items) {
+        this.items = items;
+    }
 }

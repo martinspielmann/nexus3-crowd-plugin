@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.epomeroy.jira.crowd.nexus3.plugin.internal.CachingNexusCrowdClient;
+import com.epomeroy.jira.crowd.nexus3.plugin.internal.CrowdProperties;
 
 /**
  * The Class CrowdAuthenticatingRealm.
@@ -42,6 +43,7 @@ public class CrowdAuthenticatingRealm extends AuthorizingRealm {
 
     public static final String NAME = "CrowdAuthenticatingRealm";
     private static final Logger LOGGER = LoggerFactory.getLogger(CrowdAuthenticatingRealm.class);
+    private final CrowdProperties properties;
     private CachingNexusCrowdClient client;
 
     /**
@@ -50,8 +52,9 @@ public class CrowdAuthenticatingRealm extends AuthorizingRealm {
      * @param client the client
      */
     @Inject
-    public CrowdAuthenticatingRealm(final CachingNexusCrowdClient client) {
+    public CrowdAuthenticatingRealm(final CachingNexusCrowdClient client, CrowdProperties properties) {
         this.client = client;
+        this.properties = properties;
         setName(NAME);
     }
 
@@ -75,7 +78,7 @@ public class CrowdAuthenticatingRealm extends AuthorizingRealm {
      */
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
-        String username = (String) principals.getPrimaryPrincipal();
+        String username = properties.getApplicationName();
         LOGGER.info("doGetAuthorizationInfo for " + username);
         return new SimpleAuthorizationInfo(client.findRolesByUser(username));
     }
