@@ -36,7 +36,7 @@ import javax.inject.Singleton;
 public class CrowdAuthenticatingRealm extends AuthorizingRealm {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrowdAuthenticatingRealm.class);
-	public static final String NAME = "CrowdAuthenticatingRealm";
+	public static final String NAME = "com.pingunaut.nexus3.crowd.plugin.CrowdAuthenticatingRealm";
 	private CachingNexusCrowdClient client;
 
 	/**
