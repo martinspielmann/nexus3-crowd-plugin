@@ -1,19 +1,18 @@
 package com.epomeroy.jira.crowd.nexus3.plugin.internal;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.apache.http.HttpHost;
-import org.apache.http.client.ResponseHandler;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -107,7 +106,7 @@ public class CachingNexusCrowdClientTest {
         when(mockedClient.authenticate(token)).thenCallRealMethod();
         when(mockedClient.executeQuery(any(), any())).thenReturn("foo");
         when(mockedClient.getServerUriString()).thenReturn("bar");
-        when(mockedClient.buildRestUri(anyString(), "", "")).thenReturn("http://abc");
+        when(mockedClient.buildRestUri(anyString(), anyString(), anyString())).thenReturn("http://abc");
         boolean auth = mockedClient.authenticate(token);
         Assert.assertTrue(auth);
     }
@@ -119,10 +118,11 @@ public class CachingNexusCrowdClientTest {
         when(mockedClient.authenticate(token)).thenCallRealMethod();
         when(mockedClient.executeQuery(any(), any())).thenReturn(null);
         when(mockedClient.getServerUriString()).thenReturn("bar");
-        when(mockedClient.buildRestUri(anyString(), "", "")).thenReturn("http://abc");
+        when(mockedClient.buildRestUri(anyString(), anyString(), anyString())).thenReturn("http://abc");
         boolean auth = mockedClient.authenticate(token);
         Assert.assertFalse(auth);
     }
+
 
     @Test
     public void testAuthenticateCacheEnabled() {
@@ -130,16 +130,18 @@ public class CachingNexusCrowdClientTest {
 
         UsernamePasswordToken token = new UsernamePasswordToken("user123", "password123");
         when(mockedClient.authenticate(token)).thenCallRealMethod();
-        when(mockedClient.executeQuery(any(), any())).thenReturn("foo");
+        when(mockedClient.executeQuery(any(),any())).thenReturn("foo");
         when(mockedClient.getServerUriString()).thenReturn("bar");
         CacheProvider cache = mock(CacheProvider.class);
         when(mockedClient.getCache()).thenReturn(cache);
+        HttpUriRequest request = mock(HttpUriRequest.class);
+        doNothing().when(mockedClient).addDefaultHeaders(request);
         when(mockedClient.isAuthCacheEnabled()).thenReturn(Boolean.TRUE);
-        when(mockedClient.buildRestUri(anyString(), "", "")).thenReturn("http://abc");
+        when(mockedClient.buildRestUri(anyString(), anyString(), anyString())).thenReturn("http://abc");
         boolean auth = mockedClient.authenticate(token);
 
         Assert.assertTrue(auth);
-        verify(cache, times(1)).putToken(any(), any());
+        verify(cache, times(1)).putToken(any(),any());
     }
 
     @Test
@@ -152,6 +154,8 @@ public class CachingNexusCrowdClientTest {
         when(mockedClient.getServerUriString()).thenReturn("bar");
         CacheProvider cache = mock(CacheProvider.class);
         when(mockedClient.getCache()).thenReturn(cache);
+        HttpUriRequest request = mock(HttpUriRequest.class);
+        doNothing().when(mockedClient).addDefaultHeaders(request);
         when(mockedClient.authenticateFromCache(any())).thenReturn(true);
         when(mockedClient.isAuthCacheEnabled()).thenReturn(Boolean.TRUE);
         boolean auth = mockedClient.authenticate(token);
@@ -205,7 +209,7 @@ public class CachingNexusCrowdClientTest {
         when(props.getApplicationName()).thenReturn("app");
         when(props.getApplicationPassword()).thenReturn("passw");
         CachingNexusCrowdClient client = new CachingNexusCrowdClient(props, cache);
-        Assert.assertEquals("http://foobar/rest/usermanagement/1/blub", client.buildRestUri("blub", "", ""));
+        Assert.assertEquals("http://foobar/rest/usermanagement/1/blub", client.buildRestUri("usermanagement", "1", "blub"));
     }
 
     @Test
@@ -216,12 +220,13 @@ public class CachingNexusCrowdClientTest {
         when(props.getServerUrl()).thenReturn("http://foobar/");
         when(props.getApplicationName()).thenReturn("app");
         when(props.getApplicationPassword()).thenReturn("passw");
+        ArrayList<ImmutablePair<String, String>> mappings = new ArrayList<>();
+        mappings.add(new ImmutablePair("nx-admin", "jira-admin"));
+        mappings.add(new ImmutablePair<>("nx-user", "jira-user"));
+
+        when(props.getRoleMapping()).thenReturn(mappings);
         CloseableHttpClient clientMock = Mockito.mock(CloseableHttpClient.class);
         ArgumentCaptor<HttpUriRequest> captor = ArgumentCaptor.forClass(HttpUriRequest.class);
-        when(clientMock.execute(any(HttpHost.class), captor.capture(), any(ResponseHandler.class))).thenReturn(
-                IntStream.range(0, 1000).mapToObj(this::createRole).collect(Collectors.toSet()),
-                IntStream.range(1000, 1500).mapToObj(this::createRole).collect(Collectors.toSet())
-        );
         CachingNexusCrowdClient client = new CachingNexusCrowdClient(props, cache) {
             @Override
             protected CloseableHttpClient getClient() {
@@ -230,15 +235,17 @@ public class CachingNexusCrowdClientTest {
         };
         Set<Role> roles = client.findRoles();
 
-        Assert.assertEquals(1500, roles.size());
-        Assert.assertTrue(captor.getAllValues().get(0).getURI().getQuery().contains("start-index=0"));
-        Assert.assertTrue(captor.getAllValues().get(1).getURI().getQuery().contains("start-index=1000"));
+        Assert.assertEquals(2, roles.size());
+        Assert.assertTrue(roles.stream().anyMatch(o -> createRole("nx-admin").getName().equals(o.getName())));
+        Assert.assertTrue(roles.stream().anyMatch(o -> createRole("nx-user").getName().equals(o.getName())));
     }
 
-    private Role createRole(int index) {
+    private Role createRole(String id) {
         Role role = new Role();
-        role.setName("administrators" + index);
-        role.setDescription("Global administrator group");
+        role.setRoleId(id);
+        role.setName(id);
+        role.setDescription(id);
+        role.setSource(CrowdUserManager.SOURCE);
         return role;
     }
 }

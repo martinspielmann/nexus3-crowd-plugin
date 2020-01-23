@@ -3,7 +3,6 @@ package com.epomeroy.jira.crowd.nexus3.plugin.internal.entity.mapper;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,7 +14,6 @@ import org.apache.http.util.EntityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.sonatype.nexus.security.role.Role;
 import org.sonatype.nexus.security.user.User;
 import org.sonatype.nexus.security.user.UserStatus;
 
@@ -33,7 +31,6 @@ import com.google.gson.reflect.TypeToken;
 public class CrowdMapper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CrowdMapper.class);
-
     private static final Gson GSON = new Gson();
 
     private CrowdMapper() {
@@ -49,11 +46,6 @@ public class CrowdMapper {
         u.setUserId(c.getName());
         u.setSource(CrowdUserManager.SOURCE);
         return u;
-    }
-
-    public static Role toRole(CrowdGroupResult crowdGroup) {
-        return new Role(crowdGroup.getName(), crowdGroup.getName(), crowdGroup.getName(),
-                CrowdUserManager.SOURCE, true, null, null);
     }
 
     public static String toAuthenticationJsonString(UsernamePasswordToken token) {
@@ -108,19 +100,6 @@ public class CrowdMapper {
         return null;
     }
 
-    public static Role toRole(HttpResponse r) {
-        if (responseOK(r)) {
-            try {
-                return toRole(GSON.fromJson(EntityUtils.toString(r.getEntity()), CrowdGroupResult.class));
-            } catch (JsonSyntaxException | ParseException | IOException e) {
-                logMappingException(e);
-            }
-        } else {
-            logResponseException(r);
-        }
-        return null;
-    }
-
     public static Set<User> toUsers(HttpResponse r) {
         if (responseOK(r)) {
             try {
@@ -153,20 +132,6 @@ public class CrowdMapper {
         return Collections.emptySet();
     }
 
-    public static Set<Role> toRoles(HttpResponse r) {
-        if (responseOK(r)) {
-            try {
-                return GSON.fromJson(EntityUtils.toString(r.getEntity()), CrowdGroupsResult.class).getItems().stream()
-                        .map(CrowdMapper::toRole).collect(Collectors.toSet());
-            } catch (JsonSyntaxException | ParseException | IOException e) {
-                logMappingException(e);
-            }
-        } else {
-            logResponseException(r);
-        }
-        return Collections.emptySet();
-    }
-
     private static void logMappingException(Exception e) {
         LOGGER.error("Error while mapping result", e);
     }
@@ -179,19 +144,5 @@ public class CrowdMapper {
             // no content available. just log status code
         }
         LOGGER.error(String.format("Error with request %s - STATUS %d", content, r.getStatusLine().getStatusCode()));
-    }
-
-    public static Set<Role> toRoles(String jiraUserGroup) {
-        Role r = new Role();
-        r.setRoleId(jiraUserGroup);
-        r.setName(jiraUserGroup);
-        r.setDescription(jiraUserGroup);
-        r.setSource(CrowdUserManager.SOURCE);
-        r.setReadOnly(true);
-
-        HashSet<Role> s = new HashSet<Role>();
-        s.add(r);
-
-        return s;
     }
 }

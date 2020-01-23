@@ -19,7 +19,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.junit.Assert;
 import org.junit.Test;
-import org.sonatype.nexus.security.role.Role;
 import org.sonatype.nexus.security.user.User;
 import org.sonatype.nexus.security.user.UserStatus;
 
@@ -36,13 +35,13 @@ public class CrowdMapperTest {
     public void testToAuthToken() {
         HttpResponse response = mock(HttpResponse.class);
         StatusLine statusLine = mock(StatusLine.class);
-        HttpEntity httpEntity = new StringEntity("{\"name\":\"someName\"}", ContentType.APPLICATION_JSON);
+        HttpEntity httpEntity = new StringEntity("{\"session\": {\"name\": \"JSESSIONID\", \"value\": \"403EBD29676819FAC3AC5BC217998DD8\"}, loginInfo: {\"failedLoginCount\": 42,\"loginCount\": 9000}}", ContentType.APPLICATION_JSON);
 
         when(response.getStatusLine()).thenReturn(statusLine);
         when(response.getEntity()).thenReturn(httpEntity);
         when(statusLine.getStatusCode()).thenReturn(200);
 
-        assertEquals("someName", CrowdMapper.toAuthToken(response));
+        assertEquals("403EBD29676819FAC3AC5BC217998DD8", CrowdMapper.toAuthToken(response));
     }
 
     @Test
@@ -63,8 +62,7 @@ public class CrowdMapperTest {
     public void testToRoleStrings() {
         HttpResponse response = mock(HttpResponse.class);
         StatusLine statusLine = mock(StatusLine.class);
-        HttpEntity httpEntity = new StringEntity("{\"expand\":\"group\",\"groups\":[{\"name\":\"bitbucket-users\"},{\"name\":\"jenkins-users\"},{\"name\":\"nx-users\"}]}", ContentType.APPLICATION_JSON);
-
+        HttpEntity httpEntity = new StringEntity("{\"name\":\"jane\", \"groups\": {\"size\": 3,\"items\": [{\"name\":\"bitbucket-users\"},{\"name\":\"jenkins-users\"}, {\"name\":\"nx-users\"}]}}", ContentType.APPLICATION_JSON);
         when(response.getStatusLine()).thenReturn(statusLine);
         when(response.getEntity()).thenReturn(httpEntity);
         when(statusLine.getStatusCode()).thenReturn(200);
@@ -92,7 +90,7 @@ public class CrowdMapperTest {
     public void testToUser() {
         HttpResponse response = mock(HttpResponse.class);
         StatusLine statusLine = mock(StatusLine.class);
-        HttpEntity httpEntity = new StringEntity("{\"expand\":\"attributes\",\"name\":\"greg\",\"active\":true,\"first-name\":\"Greg\",\"last-name\":\"Dunn\",\"display-name\":\"Greg Dunn\",\"email\":\"greg@example.com\"}", ContentType.APPLICATION_JSON);
+        HttpEntity httpEntity = new StringEntity("{\"name\":\"csagan\", \"emailAddress\": \"csagan@seti.org\", \"displayName\": \"Carl Sagan\", \"active\": true, \"timeZone\": \"America/New York\", \"groups\": {\"size\": 3,\"items\": [{\"name\":\"bitbucket-users\"},{\"name\":\"jenkins-users\"}, {\"name\":\"nx-users\"}]}}", ContentType.APPLICATION_JSON);
 
         when(response.getStatusLine()).thenReturn(statusLine);
         when(response.getEntity()).thenReturn(httpEntity);
@@ -101,10 +99,10 @@ public class CrowdMapperTest {
         User user = CrowdMapper.toUser(response);
 
         assertNotNull(user);
-        assertEquals("greg", user.getUserId());
-        assertEquals("Greg", user.getFirstName());
-        assertEquals("Dunn", user.getLastName());
-        assertEquals("greg@example.com", user.getEmailAddress());
+        assertEquals("csagan", user.getUserId());
+        assertEquals("Carl", user.getFirstName());
+        assertEquals("Sagan", user.getLastName());
+        assertEquals("csagan@seti.org", user.getEmailAddress());
         assertEquals(UserStatus.active, user.getStatus());
         Assert.assertEquals(CrowdUserManager.SOURCE, user.getSource());
     }
@@ -122,43 +120,44 @@ public class CrowdMapperTest {
         assertNull(CrowdMapper.toUser(response));
     }
 
-    @Test
-    public void testToRole() {
-        HttpResponse response = mock(HttpResponse.class);
-        StatusLine statusLine = mock(StatusLine.class);
-        HttpEntity httpEntity = new StringEntity("{\"expand\":\"attributes\",\"name\":\"nx-admin\",\"description\":\"Nexus repo administrator group\",\"type\":\"GROUP\",\"active\":true}", ContentType.APPLICATION_JSON);
+//    @Test
+//    public void testToRole() {
+//        HttpResponse response = mock(HttpResponse.class);
+//        StatusLine statusLine = mock(StatusLine.class);
+//        HttpEntity httpEntity = new StringEntity("{\"name\": \"nx-admin\"}", ContentType.APPLICATION_JSON);
+//
+//        when(response.getStatusLine()).thenReturn(statusLine);
+//        when(response.getEntity()).thenReturn(httpEntity);
+//        when(statusLine.getStatusCode()).thenReturn(200);
+//
+//        Role role = CrowdMapper.toRole(response);
+//
+//        assertNotNull(role);
+//        assertEquals("nx-admin", role.getRoleId());
+//        assertEquals("nx-admin", role.getName());
+//        assertEquals("nx-admin", role.getDescription());
+//        assertEquals(CrowdUserManager.SOURCE, role.getSource());
+//    }
 
-        when(response.getStatusLine()).thenReturn(statusLine);
-        when(response.getEntity()).thenReturn(httpEntity);
-        when(statusLine.getStatusCode()).thenReturn(200);
-
-        Role role = CrowdMapper.toRole(response);
-
-        assertNotNull(role);
-        assertEquals("nx-admin", role.getRoleId());
-        assertEquals("nx-admin", role.getName());
-        assertEquals("Nexus repo administrator group", role.getDescription());
-        assertEquals(CrowdUserManager.SOURCE, role.getSource());
-    }
-
-    @Test
-    public void testToRoleWithRoleNotFound() {
-        HttpResponse response = mock(HttpResponse.class);
-        StatusLine statusLine = mock(StatusLine.class);
-        HttpEntity httpEntity = new StringEntity("{\"reason\":\"GROUP_NOT_FOUND\",\"message\":\"Group <anonymous> does not exist\"}", ContentType.APPLICATION_JSON);
-
-        when(response.getStatusLine()).thenReturn(statusLine);
-        when(response.getEntity()).thenReturn(httpEntity);
-        when(statusLine.getStatusCode()).thenReturn(404);
-
-        assertNull(CrowdMapper.toRole(response));
-    }
+//    @Test
+//    public void testToRoleWithRoleNotFound() {
+//        HttpResponse response = mock(HttpResponse.class);
+//        StatusLine statusLine = mock(StatusLine.class);
+//        HttpEntity httpEntity = new StringEntity("{\"reason\":\"GROUP_NOT_FOUND\",\"message\":\"Group <anonymous> does not exist\"}", ContentType.APPLICATION_JSON);
+//
+//        when(response.getStatusLine()).thenReturn(statusLine);
+//        when(response.getEntity()).thenReturn(httpEntity);
+//        when(statusLine.getStatusCode()).thenReturn(404);
+//
+//        assertNull(CrowdMapper.toRole(response));
+//    }
 
     @Test
     public void testToUsers() {
         HttpResponse response = mock(HttpResponse.class);
         StatusLine statusLine = mock(StatusLine.class);
-        HttpEntity httpEntity = new StringEntity("{\"expand\":\"user\",\"users\":[{\"name\":\"greg\",\"active\":true,\"first-name\":\"Greg\",\"last-name\":\"Dunn\",\"display-name\":\"Greg Dunn\",\"email\":\"greg@example.com\"},{\"name\":\"adam\",\"active\":false,\"first-name\":\"Adam\",\"last-name\":\"Ben\",\"display-name\":\"Adam Ben\",\"email\":\"adam@example.com\"}]}", ContentType.APPLICATION_JSON);
+        HttpEntity httpEntity = new StringEntity("{values:[{\"name\":\"csagan\", \"emailAddress\": \"csagan@seti.org\", \"displayName\": \"Carl Sagan\", \"active\": true, \"timeZone\": \"America/New York\", \"groups\": {\"size\": 3,\"items\": [{\"name\":\"bitbucket-users\"},{\"name\":\"jenkins-users\"}, {\"name\":\"nx-users\"}]}}, "
+                                                 + "{\"name\":\"mcurie\", \"emailAddress\": \"mcurie@home.cern\", \"displayName\": \"Marie Curie\", \"active\": true, \"timeZone\": \"Europe/Geneva\", \"groups\": {\"size\": 3,\"items\": [{\"name\":\"bitbucket-admins\"},{\"name\":\"jenkins-admins\"}, {\"name\":\"nx-users\"}]}}]}", ContentType.APPLICATION_JSON);
 
         when(response.getStatusLine()).thenReturn(statusLine);
         when(response.getEntity()).thenReturn(httpEntity);
@@ -169,11 +168,11 @@ public class CrowdMapperTest {
         assertThat(users, hasSize(2));
 
         User u1 = new User();
-        u1.setUserId("greg");
+        u1.setUserId("csagan");
         u1.setSource(CrowdUserManager.SOURCE);
 
         User u2 = new User();
-        u2.setUserId("adam");
+        u2.setUserId("mcurie");
         u2.setSource(CrowdUserManager.SOURCE);
 
         assertThat(users, hasItems(u1, u2));
@@ -196,18 +195,18 @@ public class CrowdMapperTest {
     public void testToRoles() {
         HttpResponse response = mock(HttpResponse.class);
         StatusLine statusLine = mock(StatusLine.class);
-        HttpEntity httpEntity = new StringEntity("{\"expand\":\"group\",\"groups\":[{\"name\":\"nx-admin\",\"type\":\"GROUP\",\"active\":true},{\"name\":\"nx-user\",\"type\":\"GROUP\",\"active\":false}]}", ContentType.APPLICATION_JSON);
+        HttpEntity httpEntity = new StringEntity("{groups: {\"size\": 2,\"items\": [{\"name\": \"jira-admin\"}, {\"name\":\"jira-user\"}]}}", ContentType.APPLICATION_JSON);
 
         when(response.getStatusLine()).thenReturn(statusLine);
         when(response.getEntity()).thenReturn(httpEntity);
         when(statusLine.getStatusCode()).thenReturn(200);
 
-        Set<Role> roles = CrowdMapper.toRoles(response);
+        Set<String> roles = CrowdMapper.toRoleStrings(response);
 
         assertThat(roles, hasSize(2));
 
-        Role r1 = new Role("nx-admin", "nx-admin", null, CrowdUserManager.SOURCE, true, null, null);
-        Role r2 = new Role("nx-user", "nx-user", null, CrowdUserManager.SOURCE, true, null, null);
+        String r1 = new String("jira-admin");
+        String r2 = new String("jira-user");
 
         assertThat(roles, hasItems(r1, r2));
     }
@@ -222,6 +221,6 @@ public class CrowdMapperTest {
         when(response.getEntity()).thenReturn(httpEntity);
         when(statusLine.getStatusCode()).thenReturn(401);
 
-        assertThat(CrowdMapper.toRoles(response), empty());
+        assertThat(CrowdMapper.toRoleStrings(response), empty());
     }
 }

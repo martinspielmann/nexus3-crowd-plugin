@@ -102,7 +102,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
         return g;
     }
 
-    private void addDefaultHeaders(HttpUriRequest g) {
+    protected void addDefaultHeaders(HttpUriRequest g) {
         g.addHeader("Content-Type", "application/json");
         g.addHeader("Accept", "application/json");
         g.addHeader("Authorization", String.format("Basic %s", Base64.getEncoder().encodeToString(props.getBasicAuthorization())));
@@ -169,7 +169,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
         String restUri = buildRestUri("api", "2", String.format("user?username=%s", encodeUrlParameter(username)));
         LOGGER.debug("getting groups from " + restUri);
-        return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings);
+        return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings).stream().map(r -> props.mapRole(r)).collect(Collectors.toSet());
     }
 
     @Override
@@ -190,7 +190,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
     @Override
     // TODO: 1/20/20 group member search only returns 50 users at a time. This call needs to query the server until all group members are returned
     public Set<User> findUsers() {
-        return executeQuery(httpGet(buildRestUri("api", "2", String.format("group/member?groupname=%s", encodeUrlParameter(props.getJiraUserGroup())))), CrowdMapper::toUsers);
+        return executeQuery(httpGet(buildRestUri("api", "2", String.format("group/member?groupname=%s", encodeUrlParameter(props.getFilterGroup())))), CrowdMapper::toUsers);
     }
 
     @Override
@@ -207,7 +207,7 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
 
     @Override
     public Set<Role> findRoles() {
-        return CrowdMapper.toRoles(props.getJiraUserGroup());
+        return props.getRoleMapping().stream().map(CrowdProperties::getNexusRole).collect(Collectors.toSet());
     }
 
     protected String buildRestUri(String apiName, String apiVersion, String path) {

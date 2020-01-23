@@ -78,7 +78,7 @@ public class CrowdAuthenticatingRealm extends AuthorizingRealm {
      */
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
-        String username = properties.getApplicationName();
+        String username = (String) principals.getPrimaryPrincipal();
         LOGGER.info("doGetAuthorizationInfo for " + username);
         return new SimpleAuthorizationInfo(client.findRolesByUser(username));
     }
