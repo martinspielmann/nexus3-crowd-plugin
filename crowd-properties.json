@@ -1,0 +1,20 @@
+{
+  "serverURL": "https://jira.example.com",
+  "appUser": "nexus",
+  "appPass": "nexus",
+  "authCache": false,
+  "connectTimeout": 15000,
+  "socketTimeout": 15000,
+  "requestTimeout": 15000,
+  "filterGroup": "jira-users",
+  "roleMapping": [
+    {
+      "nexusRole": "nx-user",
+      "jiraRole": "jira-user"
+    },
+    {
+      "nexusRole": "nx-admin",
+      "jiraRole": "jira-admin"
+    }
+  ]
+}
