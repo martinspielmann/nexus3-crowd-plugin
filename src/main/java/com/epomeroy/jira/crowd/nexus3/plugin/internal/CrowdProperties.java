@@ -116,7 +116,7 @@ public class CrowdProperties {
         // Read a docker env setting and try to use it, otherwise fall back to config file
         // Docker secrets are files in the /run/secrets folder and are passed as the full filename
         String pw = readFile(System.getenv("APPLICATION_PASSWORD"));
-        String applicationPassword = !StringUtils.isNotEmpty(pw) ? pw : readFile(configuration.getAppPass());
+        String applicationPassword = StringUtils.isNotEmpty(pw) ? pw : readFile(configuration.getAppPass());
         if (StringUtils.isEmpty(applicationPassword)) {
             LOGGER.error("APPLICATION_PASSWORD is not set");
             return "";
