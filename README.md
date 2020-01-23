@@ -29,7 +29,7 @@ FROM sonatype/nexus3
 USER root
 
 # Download crowd plugin
-COPY ./target/nexus3-jira-crowd-plugin-3.21.0.-SNAPSHOT.jar /opt/sonatype/nexus/system/nexus3-jira-crowd-plugin.jar
+COPY ./target/nexus3-jira-crowd-plugin-3.21.0-SNAPSHOT.jar /opt/sonatype/nexus/system/nexus3-jira-crowd-plugin.jar
 
 # Install plugin
 RUN echo "reference\:file\:nexus3-jira-crowd-plugin.jar = 200" >> /opt/sonatype/nexus/etc/karaf/startup.properties
@@ -152,7 +152,7 @@ That's it. You should no be able to logout and login with your Crowd user (provi
 Build and install the into your local maven repository using the following commands:
 ```
 https://github.com/EarlPomeroy/nexus3-jira-embedded-crowd-plugin.git
-cd nnexus3-jira-embedded-crowd-plugin
+cd nexus3-jira-embedded-crowd-plugin
 mvn install
 ```
 
