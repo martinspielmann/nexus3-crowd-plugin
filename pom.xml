@@ -6,12 +6,12 @@
     <parent>
         <groupId>org.sonatype.nexus.plugins</groupId>
         <artifactId>nexus-plugins</artifactId>
-        <version>3.16.1-02</version>
+        <version>3.20.1-01</version>
     </parent>
 
     <groupId>com.epomeroy.jira.crowd.nexus3</groupId>
     <artifactId>nexus3-jira-crowd-plugin</artifactId>
-    <version>3.7.2-SNAPSHOT</version>
+    <version>3.20.0-SNAPSHOT</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <packaging>bundle</packaging>
@@ -60,7 +60,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.3</version>
+                <version>0.8.5</version>
                 <executions>
                     <execution>
                         <id>jacoco-initialize</id>
@@ -93,7 +93,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M3</version>
+                <version>3.0.0-M4</version>
                 <configuration>
                     <argLine>${surefireArgLine}</argLine>
                 </configuration>

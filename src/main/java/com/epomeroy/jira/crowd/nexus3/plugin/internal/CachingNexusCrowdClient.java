@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -167,14 +168,18 @@ public class CachingNexusCrowdClient implements NexusCrowdClient {
             return cachedGroups.get();
         }
 
-        String restUri = buildRestUri("api", "2", String.format("user?username=%s", encodeUrlParameter(username)));
+        String restUri = buildRestUri("api", "2", String.format("user?username=%s&expand=groups", encodeUrlParameter(username)));
         LOGGER.debug("getting groups from " + restUri);
-        return executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings).stream().map(r -> props.mapRole(r)).collect(Collectors.toSet());
+        Set<String> groups = executeQuery(httpGet(restUri), CrowdMapper::toRoleStrings).stream().map(r -> props.mapRole(r)).filter(Objects::nonNull).collect(Collectors.toSet());
+
+        groups.stream().forEach(g -> LOGGER.info("NX GROUP: " + g));
+
+        return groups;
     }
 
     @Override
     public User findUserByUsername(String username) {
-        return executeQuery(httpGet(buildRestUri("api", "2", String.format("user?username=%s", encodeUrlParameter(username)))), CrowdMapper::toUser);
+        return executeQuery(httpGet(buildRestUri("api", "2", String.format("user?username=%s&expand=groups", encodeUrlParameter(username)))), CrowdMapper::toUser);
     }
 
     @Override
