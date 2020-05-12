@@ -6,12 +6,12 @@
     <parent>
         <groupId>org.sonatype.nexus.plugins</groupId>
         <artifactId>nexus-plugins</artifactId>
-        <version>3.22.0-02</version>
+        <version>3.23.0-03</version>
     </parent>
 
     <groupId>com.epomeroy.jira.crowd.nexus3</groupId>
     <artifactId>nexus3-jira-crowd-plugin</artifactId>
-    <version>3.22.0</version>
+    <version>3.23.0</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <packaging>bundle</packaging>

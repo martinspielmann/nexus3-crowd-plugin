@@ -1,9 +1,9 @@
-FROM sonatype/nexus3:3.22.0
+FROM sonatype/nexus3:3.23.0
 
 USER root
 
 # Download crowd plugin
-RUN curl -L https://github.com/EarlPomeroy/nexus3-jira-embedded-crowd-plugin/releases/download/3.22.0/nexus3-jira-crowd-plugin-3.22.0.jar --output /opt/sonatype/nexus/system/nexus3-jira-crowd-plugin.jar
+RUN curl -L https://github.com/EarlPomeroy/nexus3-jira-embedded-crowd-plugin/releases/download/3.23.0/nexus3-jira-crowd-plugin-3.23.0.jar --output /opt/sonatype/nexus/system/nexus3-jira-crowd-plugin.jar
 
 # Uncomment to install plugin during local testing
 # COPY ./target/nexus3-jira-crowd-plugin-3.20.1-SNAPSHOT.jar /opt/sonatype/nexus/system/nexus3-jira-crowd-plugin.jar

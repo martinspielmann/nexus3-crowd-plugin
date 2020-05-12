@@ -1,7 +1,7 @@
 version: "3.5"
 services:
   nexus:
-    image: earlpomeroy/sonatype-nexus3:3.20.1
+    image: earlpomeroy/sonatype-nexus3:3.23.0
     volumes:
       - ~/tmp/nexus-data:/nexus-data
     environment:
