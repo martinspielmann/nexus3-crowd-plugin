@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.sonatype.nexus.plugins</groupId>
 		<artifactId>nexus-plugins</artifactId>
-		<version>3.20.1-01</version>
+		<version>3.23.0-03</version>
 	</parent>
 
 	<groupId>com.pingunaut.nexus</groupId>
@@ -20,7 +20,7 @@
 		<maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
 		<jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
 		<maven-surefire-plugin.version>3.0.0-M4</maven-surefire-plugin.version>
-		<maven-javadoc-plugin.version>3.1.1</maven-javadoc-plugin.version>
+		<maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
 	</properties>
 
 	<dependencies>
