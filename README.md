@@ -32,7 +32,7 @@ USER root
 RUN yum install -y curl
 
 # Download crowd plugin
-RUN curl -L https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.8.1/nexus3-crowd-plugin-3.8.1.jar --output /opt/sonatype/nexus/system/nexus3-crowd-plugin.jar
+RUN curl -L https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.8.2/nexus3-crowd-plugin-3.8.2.jar --output /opt/sonatype/nexus/system/nexus3-crowd-plugin.jar
 
 # Install plugin
 RUN echo "reference\:file\:nexus3-crowd-plugin.jar = 200" >> /opt/sonatype/nexus/etc/karaf/startup.properties
@@ -56,7 +56,44 @@ docker build -t test .
 docker run --rm -ti test
 ```
 
-### Native installation without docker
+### Easiest Install
+
+Thanks to some upstream work in Nexus Repository (versions newer than 3.15), it's become a LOT easier to install a plugin. To install this format plugin, you can either build locally or download from github
+
+More information on Sonatype website: https://help.sonatype.com/repomanager3/bundle-development/installing-bundles
+
+#### Prerequisites
+* JDK 8 is installed
+* Sonatype Nexus OSS > 3.15 is installed 
+
+#### 1. Download latest release (since plugin 3.8.2) kar into nexus **$install-dir**/deploy folder 
+
+Releases can be found here: https://github.com/pingunaut/nexus3-crowd-plugin/releases
+
+```
+cd $install-dir/deploy/
+wget https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.8.2/nexus3-crowd-plugin-3.8.2-SNAPSHOT-bundle.kar
+```
+
+#### 2. Create crowd.properties
+
+Create a *crowd.properties* file in **$install-dir**/etc<br/>
+The file has to contain the following properties:
+```
+crowd.server.url=http://localhost:8095/crowd (replace by your crowd url)
+application.name=nexus (replace by your nexus application name configured in crowd)
+application.password=nexus (replace by your nexus application password configured in crowd)
+cache.authentication=false (should authentication be cached? default is false)
+
+# optional:
+timeout.connect=15000 (default is 15000)
+timeout.socket=15000 (default is 15000)
+timeout.connectionrequest=15000 (default is 15000)
+```
+
+#### 3. Restart Nexus Repo
+
+### Other Install
 
 #### Prerequisites
 * JDK 8 is installed
@@ -66,13 +103,13 @@ docker run --rm -ti test
 Releases can be found here: https://github.com/pingunaut/nexus3-crowd-plugin/releases
 ```
 cd $install-dir/system/
-wget https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.8.1/nexus3-crowd-plugin-3.8.1.jar
+wget https://github.com/pingunaut/nexus3-crowd-plugin/releases/download/nexus3-crowd-plugin-3.8.2/nexus3-crowd-plugin-3.8.2.jar
 ```
 
 #### 2. Add bundle to startup properties
 Append the following line to *startup.properties* file found in **$install-dir**/etc/karaf
 ```
-reference\:file\:nexus3-crowd-plugin-3.8.1.jar = 200
+reference\:file\:nexus3-crowd-plugin-3.8.2.jar = 200
 ```
 
 #### 3. Create crowd.properties
@@ -126,6 +163,11 @@ Build and install the into your local maven repository using the following comma
 git clone https://github.com/pingunaut/nexus3-crowd-plugin.git
 cd nexus3-crowd-plugin
 mvn install
+```
+
+In order to build the bundle (kar)
+```
+mvn clean package -PbuildKar
 ```
 
 #### 2. Start nexus with console
